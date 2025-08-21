@@ -18,7 +18,9 @@ import { Cron, CronExpression } from "@nestjs/schedule"
 import { envConfig } from "../env"
 
 const MAX_ALLOCATIONS_PER_5_MINS = 1
-const MIN_SUI_BALANCE = new BN(5).mul(new BN(10).pow(new BN(tokens[TokenId.Sui].decimals - 1))) // 0.5 SUI
+const MIN_SUI_BALANCE = new BN(5).mul(
+    new BN(10).pow(new BN(tokens[TokenId.Sui].decimals - 1)),
+) // 0.5 SUI
 
 @Injectable()
 export class PositionManagerService {
@@ -45,6 +47,15 @@ export class PositionManagerService {
       this.allocationsPer5Mins++
       await this.closePosition(poolWithFetchedPositions)
       await this.addLiquidityToTheNextTick(poolWithFetchedPositions, zeroForOne)
+  }
+
+  private checkEligibleToClosePosition(tickDiff: number, tickSpacing: number) {
+      if (tickDiff < Number(tickSpacing)) {
+          return false
+      }
+      const tickSpacingPartial = Math.floor(tickSpacing / 4)
+      const tickDiffPartial = tickDiff % tickSpacingPartial
+      return tickDiffPartial >= Number(tickSpacingPartial)
   }
 
   @OnEvent(CetusEvent.PoolsUpdated)
@@ -83,9 +94,9 @@ export class PositionManagerService {
           this.logger.verbose(
               `Tick diff: ${tickDiff}, tick spacing: ${poolWithFetchedPositions.pool.tickSpacing}.`,
           )
-          if (tickDiff >= Number(poolWithFetchedPositions.pool.tickSpacing)) {
+          if (this.checkEligibleToClosePosition(tickDiff, Number(poolWithFetchedPositions.pool.tickSpacing))) {
               this.logger.verbose(
-                  "Tick diff is too large, we will close the position",
+                  "Tick diff is too large and to near to the next tick, we will close the position",,
               )
               await this.closeThenOpenPosition(poolWithFetchedPositions, false)
               return
@@ -102,9 +113,9 @@ export class PositionManagerService {
           this.logger.verbose(
               `Tick diff: ${tickDiff}, tick spacing: ${poolWithFetchedPositions.pool.tickSpacing}.`,
           )
-          if (tickDiff >= Number(poolWithFetchedPositions.pool.tickSpacing)) {
+          if (this.checkEligibleToClosePosition(tickDiff, Number(poolWithFetchedPositions.pool.tickSpacing))) {
               this.logger.verbose(
-                  "Tick diff is too large, we will close the position",
+                  "Tick diff is too large and to near to the next tick, we will close the position",
               )
               await this.closeThenOpenPosition(poolWithFetchedPositions, true)
               return
@@ -177,15 +188,9 @@ export class PositionManagerService {
       )
       let actualAmount = new BN(balance.totalBalance)
       const tokenId = zeroForOne ? pair.token0 : pair.token1
-      if (
-          tokenId === TokenId.Sui
-      ) {
-          if (
-              new BN(balance.totalBalance).lt(MIN_SUI_BALANCE)
-          ) {
-              this.logger.warn(
-                  "Balance of SUI is less than 0.5, skipping...",
-              )
+      if (tokenId === TokenId.Sui) {
+          if (new BN(balance.totalBalance).lt(MIN_SUI_BALANCE)) {
+              this.logger.warn("Balance of SUI is less than 0.5, skipping...")
               return
           } else {
               actualAmount = new BN(balance.totalBalance).sub(MIN_SUI_BALANCE)
@@ -204,7 +209,7 @@ export class PositionManagerService {
       //const currentSqrtPrice = new BN(pool.current_sqrt_price)
       const amounts = {
           coinA: new BN(zeroForOne ? actualAmount : 0),
-          coinB: new BN(zeroForOne ? 0 : actualAmount)
+          coinB: new BN(zeroForOne ? 0 : actualAmount),
       }
       const addLiquidityFixedTokenPayload =
       await this.cetusClmmSdk.Position.createAddLiquidityFixTokenPayload({
