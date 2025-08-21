@@ -1,17 +1,15 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
-import { CetusService } from './cetus/cetus.service';
+import { Module } from "@nestjs/common"
+import { EnvModule } from "@/modules/env"
+import { ScheduleModule } from "@nestjs/schedule"
+import { EventEmitterModule } from "@nestjs/event-emitter"
+import { CetusModule } from "./modules/cetus/cetus.module"
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-    envFilePath: ['.env'],
-    isGlobal: true,
-  })
-],
-  controllers: [AppController],
-  providers: [AppService, CetusService],
+    imports: [
+        EnvModule.forRoot(),
+        ScheduleModule.forRoot(),
+        EventEmitterModule.forRoot(),
+        CetusModule.register({})  
+    ],
 })
 export class AppModule { }
