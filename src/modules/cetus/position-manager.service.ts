@@ -15,15 +15,24 @@ import BN from "bn.js"
 import { tokens } from "./tokens"
 import { CetusSignerService } from "./cetus-signer.service"
 import { PoolManagerService } from "./pool-manager.service"
+import { Cron, CronExpression } from "@nestjs/schedule"
+
+const MAX_TXS_SIGN_PER_HOUR = 10
 
 @Injectable()
-export class PositionManagerService {
+export class PositionManagerService{
     private readonly logger = new Logger(PositionManagerService.name)
+    private txsSignPerHour = 0
     constructor(
         @Inject(CETUS) private cetusClmmSdk: CetusClmmSDK,
         private readonly cetusSigner: CetusSignerService,
         private readonly poolManagerService: PoolManagerService,
     ) { }
+
+    @Cron(CronExpression.EVERY_HOUR)
+    async resetTxsSignPerHour() {
+        this.txsSignPerHour = 0
+    }
 
     @OnEvent(CetusEvent.PoolsUpdated)
     async handlePoolsUpdated(
@@ -141,6 +150,11 @@ export class PositionManagerService {
         }: PoolWithFetchedPositions,
         zeroForOne?: boolean
     ) {
+        if (this.txsSignPerHour >= MAX_TXS_SIGN_PER_HOUR) {
+            this.logger.warn("Max txs sign per hour reached, skipping...")
+            return
+        }
+        this.txsSignPerHour++
         if (!zeroForOne) {
             zeroForOne = pair.defaultZeroForOne
         }
@@ -194,6 +208,11 @@ export class PositionManagerService {
     }
 
     async closePosition({ pool, positions }: PoolWithFetchedPositions) {
+        if (this.txsSignPerHour >= MAX_TXS_SIGN_PER_HOUR) {
+            this.logger.warn("Max txs sign per hour reached, skipping...")
+            return
+        }
+        this.txsSignPerHour++
         // Fetch position data
         const position = positions[0]
         if (!position) {
