@@ -53,7 +53,7 @@ export class PositionManagerService {
       if (tickDiff < Number(tickSpacing)) {
           return false
       }
-      const tickSpacingPartial = Math.floor(tickSpacing / 4)
+      const tickSpacingPartial = Math.floor(tickSpacing / 3)
       const tickDiffPartial = tickDiff % tickSpacingPartial
       return tickDiffPartial >= Number(tickSpacingPartial)
   }
@@ -96,7 +96,7 @@ export class PositionManagerService {
           )
           if (this.checkEligibleToClosePosition(tickDiff, Number(poolWithFetchedPositions.pool.tickSpacing))) {
               this.logger.verbose(
-                  "Tick diff is too large and to near to the next tick, we will close the position",
+                  "Tick diff is too large and too near to the next tick, we will close the position",
               )
               await this.closeThenOpenPosition(poolWithFetchedPositions, false)
               return
