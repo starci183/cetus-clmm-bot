@@ -27,12 +27,10 @@ export class PoolManagerService {
           : [
               {
                   pairId: PairId.SuiIka02,
-                  amount: 26,
               }
               //PairId.SuiUsdc05
           ]
     }
-
   // update state each 3s
   // we use 4 rpc, rate limit is 100 request/30s
   // so we have 60 requests per 30s left
@@ -73,7 +71,6 @@ export class PoolManagerService {
           positions,
           pair,
           pairId: pairAllocation.pairId,
-          amount: pairAllocation.amount,
       }
   }
 }

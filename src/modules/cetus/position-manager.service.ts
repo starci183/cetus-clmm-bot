@@ -15,6 +15,7 @@ import BN from "bn.js"
 import { tokens } from "./tokens"
 import { CetusSignerService } from "./cetus-signer.service"
 import { Cron, CronExpression } from "@nestjs/schedule"
+import { envConfig } from "../env"
 
 const MAX_ALLOCATIONS_PER_5_MINS = 1
 
@@ -154,12 +155,33 @@ export class PositionManagerService {
 
   // we create a position on the left
   async addLiquidityToTheNextTick(
-      { pool, pair, amount }: PoolWithFetchedPositions,
+      { pool, pair }: PoolWithFetchedPositions,
       zeroForOne?: boolean,
   ) {
-      this.allocationsPer5Mins++
       if (!zeroForOne) {
           zeroForOne = pair.defaultZeroForOne
+      }
+      const [token0, token1] = [pair.token0, pair.token1].map(
+          (token) => tokens[token],
+      )
+      // fetch balance of your zero or one token
+      const balance = await this.cetusClmmSdk.fullClient.getBalance({
+          coinType: zeroForOne ? token0.address : token1.address,
+          owner: envConfig().sui.walletAddress,
+      })
+      const decimals = zeroForOne ? token0.decimals : token1.decimals
+      this.logger.debug(
+          `Balance of ${zeroForOne ? pair.token0 : pair.token1}: ${balance.totalBalance}`,
+      )
+      if (
+          new BN(balance.totalBalance).lt(
+              new BN(0.5).mul(new BN(10).pow(new BN(decimals))),
+          )
+      ) {
+          this.logger.warn(
+              `Balance of ${zeroForOne ? pair.token0 : pair.token1} is less than 0.5, skipping...`,
+          )
+          return
       }
       const { tickPrev, tickNext } = this.getLowerAndUpperTicks(pool)
       const tickSpacing = Number.parseInt(pool.tickSpacing)
@@ -169,17 +191,15 @@ export class PositionManagerService {
       this.logger.debug(
           `Current tick: ${pool.current_tick_index}, lower tick: ${lowerTickIndex}, upper tick: ${upperTickIndex}`,
       )
-      const [token0, token1] = [pair.token0, pair.token1].map(
-          (token) => tokens[token],
-      )
       const slippageTolerance = 0.005 // 0.1%
       const fixedAmountA = zeroForOne
       //const currentSqrtPrice = new BN(pool.current_sqrt_price)
+      const actualAmount = new BN(balance.totalBalance).sub(new BN(1).mul(new BN(10).pow(new BN(decimals))))
       const amounts = {
-          coinA: new BN(zeroForOne ? amount : 0).mul(
+          coinA: new BN(zeroForOne ? actualAmount : 0).mul(
               new BN(10).pow(new BN(token0.decimals)),
           ),
-          coinB: new BN(zeroForOne ? 0 : amount).mul(
+          coinB: new BN(zeroForOne ? 0 : actualAmount).mul(
               new BN(10).pow(new BN(token1.decimals)),
           ),
       }

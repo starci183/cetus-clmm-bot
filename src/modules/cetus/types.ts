@@ -8,5 +8,4 @@ export interface PoolWithFetchedPositions {
     positions: Array<Position>
     pair: Pair
     pairId: PairId
-    amount: number
 }

@@ -9,7 +9,6 @@ export interface Pair {
 
 export interface PairAllocation {
     pairId: PairId
-    amount: number
 }
 
 export enum PairId {
