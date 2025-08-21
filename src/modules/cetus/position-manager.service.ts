@@ -96,7 +96,7 @@ export class PositionManagerService {
           )
           if (this.checkEligibleToClosePosition(tickDiff, Number(poolWithFetchedPositions.pool.tickSpacing))) {
               this.logger.verbose(
-                  "Tick diff is too large and too near to the next tick, we will close the position",
+                  "Tick diff is too large and near enough to the next tick, we will close the position",
               )
               await this.closeThenOpenPosition(poolWithFetchedPositions, false)
               return
@@ -115,7 +115,7 @@ export class PositionManagerService {
           )
           if (this.checkEligibleToClosePosition(tickDiff, Number(poolWithFetchedPositions.pool.tickSpacing))) {
               this.logger.verbose(
-                  "Tick diff is too large and to near to the next tick, we will close the position",
+                  "Tick diff is too large and near enough to the next tick, we will close the position",
               )
               await this.closeThenOpenPosition(poolWithFetchedPositions, true)
               return
