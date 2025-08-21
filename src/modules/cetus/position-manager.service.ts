@@ -215,12 +215,8 @@ export class PositionManagerService {
       const fixedAmountA = zeroForOne
       //const currentSqrtPrice = new BN(pool.current_sqrt_price)
       const amounts = {
-          coinA: new BN(zeroForOne ? actualAmount : 0).mul(
-              new BN(10).pow(new BN(token0.decimals)),
-          ),
-          coinB: new BN(zeroForOne ? 0 : actualAmount).mul(
-              new BN(10).pow(new BN(token1.decimals)),
-          ),
+          coinA: new BN(zeroForOne ? actualAmount : 0),
+          coinB: new BN(zeroForOne ? 0 : actualAmount)
       }
       const addLiquidityFixedTokenPayload =
       await this.cetusClmmSdk.Position.createAddLiquidityFixTokenPayload({
