@@ -198,7 +198,7 @@ export class PositionManagerService {
       const slippageTolerance = 0.005 // 0.1%
       const fixedAmountA = zeroForOne
       //const currentSqrtPrice = new BN(pool.current_sqrt_price)
-      const actualAmount = new BN(balance.totalBalance).sub(new BN(1).mul(new BN(10).pow(new BN(decimals))))
+      const actualAmount = new BN(balance.totalBalance)
       const amounts = {
           coinA: new BN(zeroForOne ? actualAmount : 0).mul(
               new BN(10).pow(new BN(token0.decimals)),
