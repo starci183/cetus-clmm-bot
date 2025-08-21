@@ -54,8 +54,8 @@ export class PositionManagerService {
           return false
       }
       const tickSpacingPartial = Math.floor(tickSpacing / 3)
-      const tickDiffPartial = tickDiff % tickSpacingPartial
-      return tickDiffPartial >= Number(tickSpacingPartial)
+      const tickDiffPartial = tickDiff % tickSpacing
+      return tickDiffPartial <= Number(tickSpacingPartial)
   }
 
   @OnEvent(CetusEvent.PoolsUpdated)
