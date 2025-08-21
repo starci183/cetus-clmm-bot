@@ -47,6 +47,7 @@ export class PositionManagerService {
             this.logger.debug("Position is still in range, earning fees...")
             return
         }
+        this.logger.warn(`Position is out of range, current tick is ${leftOrRight} of your position`)
         if (leftOrRight === "right") {
             this.logger.verbose(
                 `Position is out of range (right), convert to fully ${pair.token1}`,
