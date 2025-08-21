@@ -12,7 +12,7 @@ import CetusClmmSDK, {
 } from "@cetusprotocol/cetus-sui-clmm-sdk"
 import { CETUS } from "./constants"
 import BN from "bn.js"
-import { tokens } from "./tokens"
+import { TokenId, tokens } from "./tokens"
 import { CetusSignerService } from "./cetus-signer.service"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import { envConfig } from "../env"
@@ -170,16 +170,20 @@ export class PositionManagerService {
           owner: envConfig().sui.walletAddress,
       })
       const decimals = zeroForOne ? token0.decimals : token1.decimals
+      // this help user always have enough balance to add liquidity
+      // and some sui to pay for the transaction
       this.logger.debug(
           `Balance of ${zeroForOne ? pair.token0 : pair.token1}: ${balance.totalBalance}`,
       )
+      const tokenId = zeroForOne ? pair.token0 : pair.token1
       if (
+          tokenId === TokenId.Sui &&
           new BN(balance.totalBalance).lt(
               new BN(0.5).mul(new BN(10).pow(new BN(decimals))),
           )
       ) {
           this.logger.warn(
-              `Balance of ${zeroForOne ? pair.token0 : pair.token1} is less than 0.5, skipping...`,
+              "Balance of SUI is less than 0.5, skipping...",
           )
           return
       }
