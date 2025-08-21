@@ -170,7 +170,6 @@ export class PositionManagerService {
           coinType: zeroForOne ? token0.address : token1.address,
           owner: envConfig().sui.walletAddress,
       })
-      const decimals = zeroForOne ? token0.decimals : token1.decimals
       // this help user always have enough balance to add liquidity
       // and some sui to pay for the transaction
       this.logger.debug(
