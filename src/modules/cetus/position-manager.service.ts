@@ -175,11 +175,27 @@ export class PositionManagerService {
       this.logger.debug(
           `Balance of ${zeroForOne ? pair.token0 : pair.token1}: ${balance.totalBalance}`,
       )
+      let actualAmount = new BN(balance.totalBalance)
       const tokenId = zeroForOne ? pair.token0 : pair.token1
       if (
-          tokenId === TokenId.Sui &&
+          tokenId === TokenId.Sui
+      ) {
+          if (
+              new BN(balance.totalBalance).lt(
+                  new BN(5).mul(new BN(10).pow(new BN(decimals - 1))),
+              )
+          ) {
+              this.logger.warn(
+                  "Balance of SUI is less than 0.5, skipping...",
+              )
+              return
+          } else {
+              actualAmount = new BN(balance.totalBalance).sub(new BN(5).mul(new BN(10).pow(new BN(decimals - 1))))
+          }
+      }
+      if (
           new BN(balance.totalBalance).lt(
-              new BN(1).mul(new BN(10).pow(new BN(decimals - 1))),
+              new BN(5).mul(new BN(10).pow(new BN(decimals - 1))),
           )
       ) {
           this.logger.warn(
@@ -198,7 +214,6 @@ export class PositionManagerService {
       const slippageTolerance = 0.005 // 0.1%
       const fixedAmountA = zeroForOne
       //const currentSqrtPrice = new BN(pool.current_sqrt_price)
-      const actualAmount = new BN(balance.totalBalance)
       const amounts = {
           coinA: new BN(zeroForOne ? actualAmount : 0).mul(
               new BN(10).pow(new BN(token0.decimals)),
