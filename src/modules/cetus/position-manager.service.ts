@@ -179,7 +179,7 @@ export class PositionManagerService {
       if (
           tokenId === TokenId.Sui &&
           new BN(balance.totalBalance).lt(
-              new BN(0.5).mul(new BN(10).pow(new BN(decimals))),
+              new BN(1).mul(new BN(10).pow(new BN(decimals - 1))),
           )
       ) {
           this.logger.warn(
