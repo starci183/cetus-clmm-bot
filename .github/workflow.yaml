@@ -1,0 +1,22 @@
+name: Compose Docker project
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  docker-compose:
+    runs-on: self-hosted
+    environment: docker
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run Docker compose command
+        env:
+          SUI_WALLET_ADDRESS: ${{ secrets.SUI_WALLET_ADDRESS }}
+          SUI_PRIVATE_KEY_CIPHER_TEXT: ${{ secrets.SUI_PRIVATE_KEY_CIPHER_TEXT }}
+          SUI_PRIVATE_KEY_IV: ${{ secrets.SUI_PRIVATE_KEY_IV }}
+          SUI_PRIVATE_KEY_KEY: ${{ secrets.SUI_PRIVATE_KEY_KEY }}
+        run: docker compose -p cetus-clmm-bot up --build -d
