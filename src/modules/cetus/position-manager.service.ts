@@ -14,24 +14,32 @@ import { CETUS } from "./constants"
 import BN from "bn.js"
 import { tokens } from "./tokens"
 import { CetusSignerService } from "./cetus-signer.service"
-import { PoolManagerService } from "./pool-manager.service"
 import { Cron, CronExpression } from "@nestjs/schedule"
 
-const MAX_TXS_SIGN_PER_HOUR = 10
+const MAX_ALLOCATIONS_PER_5_MINS = 1
 
 @Injectable()
 export class PositionManagerService{
     private readonly logger = new Logger(PositionManagerService.name)
-    private txsSignPerHour = 0
+    private allocationsPer5Mins = 0
     constructor(
         @Inject(CETUS) private cetusClmmSdk: CetusClmmSDK,
         private readonly cetusSigner: CetusSignerService,
-        private readonly poolManagerService: PoolManagerService,
     ) { }
 
-    @Cron(CronExpression.EVERY_HOUR)
-    async resetTxsSignPerHour() {
-        this.txsSignPerHour = 0
+    @Cron(CronExpression.EVERY_5_MINUTES)
+    async resetAllocationsPer5Mins() {
+        this.allocationsPer5Mins = 0
+    }
+
+    private async closeThenOpenPosition(poolWithFetchedPositions: PoolWithFetchedPositions, zeroForOne?: boolean) {
+        if (this.allocationsPer5Mins >= MAX_ALLOCATIONS_PER_5_MINS) {
+            this.logger.warn("Max allocations per 5 mins reached, skipping...")
+            return
+        }
+        this.allocationsPer5Mins++
+        await this.closePosition(poolWithFetchedPositions)
+        await this.addLiquidityToTheNextTick(poolWithFetchedPositions, zeroForOne   )
     }
 
     @OnEvent(CetusEvent.PoolsUpdated)
@@ -72,8 +80,7 @@ export class PositionManagerService{
                 this.logger.verbose(
                     "Tick diff is too large, we will close the position",
                 )
-                await this.closePosition(poolWithFetchedPositions)
-                await this.addLiquidityToTheNextTick(poolWithFetchedPositions, false)
+                await this.closeThenOpenPosition(poolWithFetchedPositions, false)
                 return
             }
             return
@@ -91,9 +98,8 @@ export class PositionManagerService{
             if (tickDiff >= Number(poolWithFetchedPositions.pool.tickSpacing)) {
                 this.logger.verbose(
                     "Tick diff is too large, we will close the position",
-                )
-                await this.closePosition(poolWithFetchedPositions)
-                await this.addLiquidityToTheNextTick(poolWithFetchedPositions, true)
+                )   
+                await this.closeThenOpenPosition(poolWithFetchedPositions, true)
                 return
             }   
             return
@@ -114,7 +120,7 @@ export class PositionManagerService{
         const currentTick = Number(params.pool.current_tick_index)
         const upperTick = Number(position.tick_upper_index)
 
-        if (lowerTick <= currentTick && currentTick <= upperTick) {
+        if (lowerTick < currentTick && currentTick < upperTick) {
             return {
                 isOutOfRange: false,
                 leftOrRight: undefined,
@@ -150,11 +156,7 @@ export class PositionManagerService{
         }: PoolWithFetchedPositions,
         zeroForOne?: boolean
     ) {
-        if (this.txsSignPerHour >= MAX_TXS_SIGN_PER_HOUR) {
-            this.logger.warn("Max txs sign per hour reached, skipping...")
-            return
-        }
-        this.txsSignPerHour++
+        this.allocationsPer5Mins++
         if (!zeroForOne) {
             zeroForOne = pair.defaultZeroForOne
         }
@@ -208,11 +210,6 @@ export class PositionManagerService{
     }
 
     async closePosition({ pool, positions }: PoolWithFetchedPositions) {
-        if (this.txsSignPerHour >= MAX_TXS_SIGN_PER_HOUR) {
-            this.logger.warn("Max txs sign per hour reached, skipping...")
-            return
-        }
-        this.txsSignPerHour++
         // Fetch position data
         const position = positions[0]
         if (!position) {
