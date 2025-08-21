@@ -193,16 +193,6 @@ export class PositionManagerService {
               actualAmount = new BN(balance.totalBalance).sub(new BN(5).mul(new BN(10).pow(new BN(decimals - 1))))
           }
       }
-      if (
-          new BN(balance.totalBalance).lt(
-              new BN(5).mul(new BN(10).pow(new BN(decimals - 1))),
-          )
-      ) {
-          this.logger.warn(
-              "Balance of SUI is less than 0.5, skipping...",
-          )
-          return
-      }
       const { tickPrev, tickNext } = this.getLowerAndUpperTicks(pool)
       const tickSpacing = Number.parseInt(pool.tickSpacing)
       // Define the lower tick
