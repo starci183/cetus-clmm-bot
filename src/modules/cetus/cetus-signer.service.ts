@@ -16,7 +16,7 @@ export class CetusSignerService implements OnModuleInit {
     }
 
     // method to get the signer
-    private getSigner() {
+    public getSigner() {
         const cipherText = envConfig().sui.privateKey.cipherText
         const iv = Buffer.from(envConfig().sui.privateKey.iv, "base64")
         const key = Buffer.from(envConfig().sui.privateKey.key, "utf8")

@@ -9,6 +9,7 @@ export enum TokenId {
     Ika = "ika",
     Usdc = "usdc",
     Walrus = "walrus",
+    Cetus = "cetus",
 }
 export const tokens: Record<TokenId, Token> = {
     [TokenId.Sui]: {
@@ -29,6 +30,11 @@ export const tokens: Record<TokenId, Token> = {
     [TokenId.Walrus]: {
         name: "Walrus",
         address: "0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL",
+        decimals: 9,
+    },
+    [TokenId.Cetus]: {
+        name: "Cetus",
+        address: "0x06864a6f921804860930db6ddbe2e16acdf8504495ea7481637a1c8b9a8fe54b::cetus::CETUS",
         decimals: 9,
     },
 }

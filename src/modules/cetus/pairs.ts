@@ -4,6 +4,12 @@ export interface Pair {
     token0: TokenId
     token1: TokenId
     feeRate: number
+    defaultZeroForOne: boolean
+}
+
+export interface PairAllocation {
+    pairId: PairId
+    amount: number
 }
 
 export enum PairId {
@@ -13,13 +19,15 @@ export enum PairId {
 
 export const pairs: Record<PairId, Pair> = {
     [PairId.SuiIka02]: {
-        token0: TokenId.Sui,
-        token1: TokenId.Ika,
+        token0: TokenId.Ika,
+        token1: TokenId.Sui,
+        defaultZeroForOne: false,
         feeRate: 0.002,
     },
     [PairId.SuiUsdc05]: {
         token0: TokenId.Sui,
         token1: TokenId.Usdc,
+        defaultZeroForOne: false,
         feeRate: 0.005,
     },
 }

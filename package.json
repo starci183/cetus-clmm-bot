@@ -21,8 +21,6 @@
   },
   "dependencies": {
     "@cetusprotocol/cetus-sui-clmm-sdk": "^5.4.0",
-    "@mysten/sui": "^1.37.4",
-    "@mysten/sui.js": "^0.54.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
@@ -30,6 +28,8 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/schedule": "^6.0.0",
     "config": "^4.1.1",
+    "decimal.js": "^10.6.0",
+    "decimals": "^1.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "superjson": "^2.2.2"
