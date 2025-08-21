@@ -31,10 +31,10 @@ export class PoolManagerService {
               //PairId.SuiUsdc05
           ]
     }
-  // update state each 3s
+  // update state each 10s
   // we use 4 rpc, rate limit is 100 request/30s
   // so we have 60 requests per 30s left
-  @Cron("*/3 * * * * *")
+  @Cron("*/10 * * * * *")
     async updatePoolState() {
         for (const pairAllocation of this.cetusV3PoolConfigs) {
             await this.updateSinglePool(pairAllocation)
