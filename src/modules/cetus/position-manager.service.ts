@@ -201,7 +201,7 @@ export class PositionManagerService {
       this.logger.debug(
           `Current tick: ${pool.current_tick_index}, lower tick: ${lowerTickIndex}, upper tick: ${upperTickIndex}`,
       )
-      const slippageTolerance = 0.005 // 0.1%
+      const slippageTolerance = 0.01 // 0.1%
       const fixedAmountA = zeroForOne
       //const currentSqrtPrice = new BN(pool.current_sqrt_price)
       const amounts = {
