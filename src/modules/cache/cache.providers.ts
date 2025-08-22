@@ -12,7 +12,6 @@ export const createRedisCacheManagerFactoryProvider = (): Provider => ({
             url: `redis://${envConfig().redis.host}:${envConfig().redis.port}`,
             password: envConfig().redis.password,
         })
-        console.log(`redis://${envConfig().redis.host}:${envConfig().redis.port}`) 
         await client.connect()
         const keyv = new Keyv(
             new KeyvRedis(
