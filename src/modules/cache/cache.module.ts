@@ -1,7 +1,6 @@
 import { DynamicModule, Module } from "@nestjs/common"
 import { ConfigurableModuleClass, OPTIONS_TYPE } from "./cache.module-definition"
 import { createRedisCacheManagerFactoryProvider } from "./cache.providers"
-import { CacheDebugService } from "./cache-debug.service"
 
 @Module({})
 export class CacheModule extends ConfigurableModuleClass {
@@ -10,7 +9,7 @@ export class CacheModule extends ConfigurableModuleClass {
         const providers = [createRedisCacheManagerFactoryProvider()]
         return {
             ...dynamicModule,
-            providers: [...(dynamicModule.providers || []), ...providers, CacheDebugService],
+            providers: [...(dynamicModule.providers || []), ...providers],
             exports: [...providers]
         }
     }
