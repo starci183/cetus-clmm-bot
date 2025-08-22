@@ -13,8 +13,6 @@ import { CETUS } from "./constants"
 import BN from "bn.js"
 import { tokens } from "./tokens"
 import { CetusSignerService } from "./cetus-signer.service"
-import { Cache } from "cache-manager"
-import { InjectCache } from "../cache"
 import { TickManagerService } from "./tick-manager.service"
 import { AllocationManagerService } from "./allocation-manager.service"
 import { BalanceManagerService } from "./balance-manager.service"
@@ -25,8 +23,6 @@ export class PositionManagerService {
     constructor(
     @Inject(CETUS) private cetusClmmSdk: CetusClmmSDK,
     private readonly cetusSigner: CetusSignerService,
-    @InjectCache()
-    private readonly cacheManager: Cache,
     private readonly tickManagerService: TickManagerService,
     private readonly allocationManagerService: AllocationManagerService,
     private readonly balanceManagerService: BalanceManagerService,
