@@ -19,17 +19,17 @@ import { envConfig } from "../env"
 import { Cache } from "cache-manager"
 import { InjectCache } from "../cache"
 
-const VIOLATE_STOP = 0.025 // when price move 2.5% we stop for 3 hours
+const VIOLATE_STOP = 0.01 // when price move 1% we stop for 3 hours
 const MAX_ALLOCATIONS_PER_15_MINUTES = 1 // 1 allocation per 15 minutes
 // cache keys
 const cacheKeys = {
     currentTick: {
         name: "currentTick",
-        ttl: 60 * 60 * 3 * 1, // 3 hours
+        ttl:  1000 * 60 * 60 * 3, // 3 hours
     },
     numAllocations: {
         name: "numAllocations",
-        ttl: 60 * 60 * 15 // 15 minutes
+        ttl: 1000 * 60 * 60 * 15// 15 minutes
     },
 }
 
@@ -52,13 +52,24 @@ export class PositionManagerService {
         await this.cacheManager.del(cacheKeys.currentTick.name)
     }
 
+    private checkTokenAddress(tokenAddress1: string, tokenAddress2: string) {
+        const suiAddresses = [
+            "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI",
+            "0x2::sui::SUI",
+        ]
+        if (suiAddresses.includes(tokenAddress1) && suiAddresses.includes(tokenAddress2)) {
+            return true
+        }
+        return tokenAddress1 === tokenAddress2
+    }
+
     private computeTickBoundaries(
         poolWithFetchedPositions: PoolWithFetchedPositions,
         currentTick: number,
     ) {
         const { pool } = poolWithFetchedPositions
         const [token0, token1] = [pool.coinTypeA, pool.coinTypeB].map(
-            (coinType) => tokens[coinType],
+            (coinType) => Object.values(tokens).find(token => this.checkTokenAddress(token.address, coinType))!,
         )
         const priceAtCurrentTick = TickMath.tickIndexToPrice(
             currentTick,
@@ -91,8 +102,7 @@ export class PositionManagerService {
         const currentTick = await this.cacheManager.get<number>(
             cacheKeys.currentTick.name,
         )
-        const isCurrentTickUndefinedOrNull = currentTick === undefined || currentTick === null
-        if (!isCurrentTickUndefinedOrNull) {
+        if (currentTick !== undefined && currentTick !== null) {
             const { lowerTick, upperTick } = this.computeTickBoundaries(
                 poolWithFetchedPositions,
                 currentTick,
@@ -123,14 +133,6 @@ export class PositionManagerService {
             (numAllocations || 0) + 1,
             cacheKeys.numAllocations.ttl,
         )
-        if (isCurrentTickUndefinedOrNull) {
-            // set current tick
-            await this.cacheManager.set(
-                cacheKeys.currentTick.name,
-                poolWithFetchedPositions.pool.current_tick_index,
-                cacheKeys.currentTick.ttl,
-            )
-        }
     }
 
     private checkEligibleToClosePosition(tickDiff: number, tickSpacing: number) {
@@ -151,6 +153,19 @@ export class PositionManagerService {
         if (!poolWithFetchedPositions) {
             throw new Error("Pool not found")
         }
+        const currentTick = await this.cacheManager.get<number>(
+            cacheKeys.currentTick.name,
+        )
+        if (currentTick === undefined || currentTick === null) {
+            await this.cacheManager.set(
+                cacheKeys.currentTick.name,
+                poolWithFetchedPositions.pool.current_tick_index,
+                cacheKeys.currentTick.ttl,
+            )
+        }
+        console.log(poolWithFetchedPositions.pool.current_tick_index)
+        console.log(`tick boundaries: ${this.computeTickBoundaries(poolWithFetchedPositions, currentTick!).lowerTick}, ${this.computeTickBoundaries(poolWithFetchedPositions, currentTick!).upperTick}`)
+
         const { positions, pair } = poolWithFetchedPositions
         if (!positions || positions.length === 0) {
             this.logger.verbose("No positions found, creating a new position")
@@ -161,6 +176,9 @@ export class PositionManagerService {
         const { isOutOfRange, leftOrRight } =
             await this.getFirstPositionRangeStatus(poolWithFetchedPositions)
         if (!isOutOfRange) {
+            // reset the current tick since we are still in range
+            // mean that if get out of range and return back
+            await this.resetCurrentTick()
             this.logger.debug("Position is still in range, earning fees...")
             return
         }
