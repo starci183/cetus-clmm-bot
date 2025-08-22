@@ -17,7 +17,7 @@ import { CetusSignerService } from "./cetus-signer.service"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import { envConfig } from "../env"
 import { Cache } from "cache-manager"
-import { CACHE_MANAGER } from "@nestjs/cache-manager"
+import { InjectCache } from "../cache"
 
 const VIOLATE_STOP = 0.01 // when price move 1% we stop
 // cache keys
@@ -42,7 +42,7 @@ export class PositionManagerService {
     constructor(
         @Inject(CETUS) private cetusClmmSdk: CetusClmmSDK,
         private readonly cetusSigner: CetusSignerService,
-        @Inject(CACHE_MANAGER)
+        @InjectCache()
         private readonly cacheManager: Cache,
     ) { }
 

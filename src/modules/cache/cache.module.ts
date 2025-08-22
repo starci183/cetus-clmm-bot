@@ -1,37 +1,17 @@
-
-
 import { DynamicModule, Module } from "@nestjs/common"
-import {
-    ConfigurableModuleClass,
-    OPTIONS_TYPE,
-} from "./cache.module-definition"
-import { CacheModule as NestCacheModule } from "@nestjs/cache-manager" 
-import { createKeyv } from "@keyv/redis"
-import { envConfig } from "@/modules/env"
+import { ConfigurableModuleClass, OPTIONS_TYPE } from "./cache.module-definition"
+import { createRedisCacheManagerFactoryProvider } from "./cache.providers"
+import { CacheDebugService } from "./cache-debug.service"
 
 @Module({})
 export class CacheModule extends ConfigurableModuleClass {
-    static register(
-        options: typeof OPTIONS_TYPE = {}
-    ): DynamicModule {
+    static register(options: typeof OPTIONS_TYPE = {}): DynamicModule {
         const dynamicModule = super.register(options)
-        const nestCacheModule = NestCacheModule.registerAsync({
-            useFactory: async () => {
-                return {
-                    stores: [
-                        createKeyv({
-                            password: envConfig().redis.password,
-                            url: `redis://${envConfig().redis.host}:${envConfig().redis.port}`,
-                        }),
-                    ],
-                    ttl: envConfig().redis.ttl,
-                }
-            },
-        })
+        const providers = [createRedisCacheManagerFactoryProvider()]
         return {
             ...dynamicModule,
-            imports: [nestCacheModule],
-            exports: [nestCacheModule]
+            providers: [...(dynamicModule.providers || []), ...providers, CacheDebugService],
+            exports: [...providers]
         }
     }
 }
