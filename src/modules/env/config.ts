@@ -10,5 +10,11 @@ export const envConfig = () => ({
             key: process.env.SUI_PRIVATE_KEY_KEY || "",
             cipherText: process.env.SUI_PRIVATE_KEY_CIPHER_TEXT || "",
         }
+    },
+    redis: {
+        host: process.env.REDIS_HOST || "",
+        port: process.env.REDIS_PORT || "",
+        password: process.env.REDIS_PASSWORD || "",
+        ttl: Number(process.env.REDIS_TTL) || 60000,
     }
 })
