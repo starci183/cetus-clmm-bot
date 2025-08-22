@@ -17,7 +17,7 @@ import { CetusSignerService } from "./cetus-signer.service"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import { envConfig } from "../env"
 
-const MAX_ALLOCATIONS_PER_5_MINS = 1
+const MAX_ALLOCATIONS_PER_1_HOURS = 1
 const MIN_SUI_BALANCE = new BN(5).mul(
     new BN(10).pow(new BN(tokens[TokenId.Sui].decimals - 1)),
 ) // 0.5 SUI
@@ -25,26 +25,26 @@ const MIN_SUI_BALANCE = new BN(5).mul(
 @Injectable()
 export class PositionManagerService {
     private readonly logger = new Logger(PositionManagerService.name)
-    private allocationsPer5Mins = 0
+    private numAllocations = 0
     constructor(
     @Inject(CETUS) private cetusClmmSdk: CetusClmmSDK,
     private readonly cetusSigner: CetusSignerService,
     ) {}
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
-    async resetAllocationsPer5Mins() {
-        this.allocationsPer5Mins = 0
+  @Cron(CronExpression.EVERY_HOUR)
+    async resetnumAllocations() {
+        this.numAllocations = 0
     }
 
   private async closeThenOpenPosition(
       poolWithFetchedPositions: PoolWithFetchedPositions,
       zeroForOne?: boolean,
   ) {
-      if (this.allocationsPer5Mins >= MAX_ALLOCATIONS_PER_5_MINS) {
+      if (this.numAllocations >= MAX_ALLOCATIONS_PER_1_HOURS) {
           this.logger.warn("Max allocations per 5 mins reached, skipping...")
           return
       }
-      this.allocationsPer5Mins++
+      this.numAllocations++
       await this.closePosition(poolWithFetchedPositions)
       await this.addLiquidityToTheNextTick(poolWithFetchedPositions, zeroForOne)
   }
