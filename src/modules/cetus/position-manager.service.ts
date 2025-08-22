@@ -4,7 +4,6 @@ import { PairId } from "./pairs"
 import { CetusEvent } from "./events"
 import { PoolWithFetchedPositions } from "./types"
 import CetusClmmSDK, {
-    Pool,
     TickMath,
     ClmmPoolUtil,
     adjustForCoinSlippage,
@@ -39,10 +38,6 @@ export class PositionManagerService {
         currentTick: number,
         zeroForOne?: boolean,
     ) {
-        if (!this.tickManagerService.hasTickDeviated(poolWithFetchedPositions, currentTick)) {
-            this.logger.warn("Current tick is out of range, skipping...")
-            return
-        }
         const hasDeviated = await this.tickManagerService.hasTickDeviated(
             poolWithFetchedPositions,
             currentTick
@@ -73,16 +68,15 @@ export class PositionManagerService {
         if (!poolWithFetchedPositions) {
             throw new Error("Pool not found")
         }
-        // we check if the current tick is safe
+        // tick manager
         const currentTick = await this.tickManagerService.getOrCacheCurrentTick(poolWithFetchedPositions)
+        await this.tickManagerService.resetCurrentTickIfNotDeviated(poolWithFetchedPositions, currentTick)
+        // logging
         console.log(poolWithFetchedPositions.pool.current_tick_index)
         console.log(
-            `tick boundaries: ${
-                this.tickManagerService.computeTickBoundaries(poolWithFetchedPositions, currentTick!).lowerTick
-            }, 
-            ${
-    this.tickManagerService.computeTickBoundaries(poolWithFetchedPositions, currentTick!).upperTick
-}
+            `tick boundaries: 
+            ${this.tickManagerService.computeTickBoundaries(poolWithFetchedPositions, currentTick!).lowerTick}, 
+            ${this.tickManagerService.computeTickBoundaries(poolWithFetchedPositions, currentTick!).upperTick}
             `,
         )
         const { positions, pair } = poolWithFetchedPositions
@@ -114,18 +108,17 @@ export class PositionManagerService {
                 `Tick diff: ${tickDiff}, tick spacing: ${poolWithFetchedPositions.pool.tickSpacing}.`,
             )
             if (
-                this.tickManagerService.checkEligibleToClosePosition(
+                !this.tickManagerService.checkEligibleToClosePosition(
                     tickDiff,
                     Number(poolWithFetchedPositions.pool.tickSpacing),
                 )
             ) {
                 this.logger.verbose(
-                    "Tick diff is too large and near enough to the next tick, we will close the position",
+                    "Tick is not eligible to close position, skipping..."
                 )
-                await this.closeThenOpenPosition(poolWithFetchedPositions, currentTick, false)
-                return
+                return 
             }
-            return
+            await this.closeThenOpenPosition(poolWithFetchedPositions, currentTick, false)
         } else {
             this.logger.verbose(
                 `Position is out of range (left), convert to fully ${tokens[pair.token0].name}`,
@@ -138,18 +131,17 @@ export class PositionManagerService {
                 `Tick diff: ${tickDiff}, tick spacing: ${poolWithFetchedPositions.pool.tickSpacing}.`,
             )
             if (
-                this.tickManagerService.checkEligibleToClosePosition(
+                !this.tickManagerService.checkEligibleToClosePosition(
                     tickDiff,
                     Number(poolWithFetchedPositions.pool.tickSpacing),
                 )
             ) {
                 this.logger.verbose(
-                    "Tick diff is too large and near enough to the next tick, we will close the position",
+                    "Tick is not eligible to close position, skipping..."
                 )
-                await this.closeThenOpenPosition(poolWithFetchedPositions, currentTick, true)
-                return
+                return 
             }
-            return
+            await this.closeThenOpenPosition(poolWithFetchedPositions, currentTick, true)
         }
     }
 
@@ -185,15 +177,6 @@ export class PositionManagerService {
         }
     }
 
-    private getLowerAndUpperTicks(pool: Pool) {
-        const tickSpacing = Number(pool.tickSpacing)
-        const current = pool.current_tick_index
-        return {
-            tickPrev: Math.floor(current / tickSpacing) * tickSpacing,
-            tickNext: Math.ceil(current / tickSpacing) * tickSpacing,
-        }
-    }
-
     // we create a position on the left
     async addLiquidityToTheNextTick(
         { pool, pair }: PoolWithFetchedPositions,
@@ -204,13 +187,13 @@ export class PositionManagerService {
         }
         const [
             maxAmount, 
-            isSkipped
+            prepareToAdd
         ] = await this.balanceManagerService.calculateAvailableLiquidityAmount(pair.token0)
-        if (isSkipped) {
-            this.logger.warn("No liquidity available, skipping...")
+        if (!prepareToAdd) {
+            this.logger.error("No liquidity available, skipping...")
             return
         }
-        const { tickPrev, tickNext } = this.getLowerAndUpperTicks(pool)
+        const { tickPrev, tickNext } = this.tickManagerService.getLowerAndUpperTicks(pool)
         const tickSpacing = Number.parseInt(pool.tickSpacing)
         // Define the lower tick
         const lowerTickIndex = zeroForOne ? tickNext : tickPrev - tickSpacing

@@ -4,26 +4,25 @@ import { InjectCache } from "../cache"
 import { PoolWithFetchedPositions } from "./types"
 import { MixinService } from "./mixin.service"
 import { tokens } from "./tokens"
-import { TickMath } from "@cetusprotocol/cetus-sui-clmm-sdk"
+import { Pool, TickMath } from "@cetusprotocol/cetus-sui-clmm-sdk"
 import { Cron } from "@nestjs/schedule"
 
 const CACHE_TICK_NAME = "CURRENT_TICK"
 const CACHE_TICK_TTL = 1000 * 60 * 60 * 24 * 3 // 3 days
-const VIOLATE_STOP = 0.0001
+const VIOLATE_STOP = 0.01 // 1%
 @Injectable()
 export class TickManagerService {
     constructor(
-    @InjectCache()
-    private readonly cacheManager: Cache,
-    private readonly mixinService: MixinService,
-    ) {}
+        @InjectCache()
+        private readonly cacheManager: Cache,
+        private readonly mixinService: MixinService,
+    ) { }
 
     // 3 days cooling period
     @Cron("0 0 */3 * *")
     public async resetCurrentTick() {
         await this.resetCachedCurrentTick()
     }
-   
 
     public async cacheCurrentTick(currentTick: number) {
         await this.cacheManager.set(CACHE_TICK_NAME, currentTick, CACHE_TICK_TTL)
@@ -44,9 +43,9 @@ export class TickManagerService {
         const { pool } = poolWithFetchedPositions
         const [token0, token1] = [pool.coinTypeA, pool.coinTypeB].map(
             (coinType) =>
-        Object.values(tokens).find((token) =>
-            this.mixinService.checkTokenAddress(token.address, coinType),
-        )!,
+                Object.values(tokens).find((token) =>
+                    this.mixinService.checkTokenAddress(token.address, coinType),
+                )!,
         )
         const priceAtCurrentTick = TickMath.tickIndexToPrice(
             currentTick,
@@ -66,11 +65,15 @@ export class TickManagerService {
             upperTick,
         }
     }
-    
-    public async getOrCacheCurrentTick(poolWithFetchedPositions: PoolWithFetchedPositions) {
+
+    public async getOrCacheCurrentTick(
+        poolWithFetchedPositions: PoolWithFetchedPositions,
+    ) {
         let currentTick = await this.getCachedCurrentTick()
         if (!currentTick) {
-            await this.cacheCurrentTick(poolWithFetchedPositions.pool.current_tick_index)
+            await this.cacheCurrentTick(
+                poolWithFetchedPositions.pool.current_tick_index,
+            )
             currentTick = poolWithFetchedPositions.pool.current_tick_index
         }
         return currentTick
@@ -85,6 +88,24 @@ export class TickManagerService {
             currentTick,
         )
         return currentTick < lowerTick || currentTick > upperTick
+    }
+
+    public async resetCurrentTickIfNotDeviated(
+        poolWithFetchedPositions: PoolWithFetchedPositions,
+        currentTick: number,
+    ) {
+        if (!await this.hasTickDeviated(poolWithFetchedPositions, currentTick)) {
+            await this.resetCachedCurrentTick()
+        }
+    }
+
+    public getLowerAndUpperTicks(pool: Pool) {
+        const tickSpacing = Number(pool.tickSpacing)
+        const current = pool.current_tick_index
+        return {
+            tickPrev: Math.floor(current / tickSpacing) * tickSpacing,
+            tickNext: Math.ceil(current / tickSpacing) * tickSpacing,
+        }
     }
 
     public checkEligibleToClosePosition(tickDiff: number, tickSpacing: number) {

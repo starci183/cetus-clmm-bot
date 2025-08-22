@@ -20,7 +20,7 @@ export const pairs: Record<PairId, Pair> = {
     [PairId.SuiIka02]: {
         token0: TokenId.Ika,
         token1: TokenId.Sui,
-        defaultZeroForOne: false,
+        defaultZeroForOne: true,
         feeRate: 0.002,
     },
     [PairId.SuiUsdc05]: {
@@ -33,5 +33,5 @@ export const pairs: Record<PairId, Pair> = {
 
 export interface CetusV3PoolConfig {
     pairId: PairId
-  }
+}
   
