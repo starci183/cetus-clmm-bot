@@ -116,4 +116,17 @@ export class TickManagerService {
         const remainderFromTickSpacing = tickDiff % tickSpacing
         return remainderFromTickSpacing <= Number(tickSpacingPartial)
     }
+
+    public checkEligibleToAddLiquidity(
+        zeroInsteadOne: boolean, 
+        currentTick: number, 
+        tickSpacing: number
+    ) {
+        const remainderFromTickSpacing = currentTick % tickSpacing
+        const tickSpacingPartial = Math.floor(tickSpacing / 3)
+        const distance = zeroInsteadOne ? 
+            tickSpacing - remainderFromTickSpacing : 
+            remainderFromTickSpacing
+        return distance <= Number(tickSpacingPartial)
+    }
 }
