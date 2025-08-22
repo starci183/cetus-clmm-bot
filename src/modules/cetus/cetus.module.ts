@@ -8,12 +8,14 @@ import { MixinService } from "./mixin.service"
 import { AllocationManagerService } from "./allocation-manager.service"
 import { TickManagerService } from "./tick-manager.service"
 import { BalanceManagerService } from "./balance-manager.service"
+import { CetusSwapService } from "./cetus-swap.service"
 @Module({
     providers: [
         CetusSignerService,
         getCetusProvider(),
         PoolManagerService,
         MixinService,
+        CetusSwapService,
         AllocationManagerService,
         PositionManagerService,
         TickManagerService,

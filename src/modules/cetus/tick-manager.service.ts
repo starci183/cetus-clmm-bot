@@ -6,12 +6,11 @@ import { MixinService } from "./mixin.service"
 import { tokens } from "./tokens"
 import { Pool, TickMath } from "@cetusprotocol/cetus-sui-clmm-sdk"
 import { Cron } from "@nestjs/schedule"
+import { CetusSwapService } from "./cetus-swap.service"
 
 const CACHE_TICK_NAME = "CURRENT_TICK"
-const NOT_DEVIATED_TIMES_CACHE_NAME = "NOT_DEVIATED_TIMES"
 const CACHE_TICK_TTL = 1000 * 60 * 60 * 24 * 3 // 3 days
 const VIOLATE_STOP = 0.01 // 1%
-const NOT_DEVIATED_TIMES = 12 * 60 // 1 hours, since each 5s we check the tick
 
 @Injectable()
 export class TickManagerService {
@@ -20,6 +19,7 @@ export class TickManagerService {
         @InjectCache()
         private readonly cacheManager: Cache,
         private readonly mixinService: MixinService,
+        private readonly cetusSwapService: CetusSwapService,
     ) { }
 
     // 3 days cooling period
@@ -34,17 +34,6 @@ export class TickManagerService {
 
     public async getCachedCurrentTick() {
         return await this.cacheManager.get<number>(CACHE_TICK_NAME)
-    }
-
-    public async incrementNotDeviatedTimes() {
-        const notDeviatedTimes = await this.cacheManager.get<number>(NOT_DEVIATED_TIMES_CACHE_NAME) || 0
-        const newNotDeviatedTimes = notDeviatedTimes + 1
-        await this.cacheManager.set(NOT_DEVIATED_TIMES_CACHE_NAME, newNotDeviatedTimes, 0)
-        return newNotDeviatedTimes
-    }
-
-    public async resetCachedNotDeviatedTimes() {
-        await this.cacheManager.del(NOT_DEVIATED_TIMES_CACHE_NAME)
     }
 
     public async resetCachedCurrentTick() {
@@ -94,32 +83,47 @@ export class TickManagerService {
         return currentTick
     }
 
-    public async hasTickDeviated(
+    public hasTickDeviated(
         poolWithFetchedPositions: PoolWithFetchedPositions,
         currentTick: number,
-    ) {
+    ): [boolean, TokenConvert] {
         const { lowerTick, upperTick } = this.computeTickBoundaries(
             poolWithFetchedPositions,
             currentTick,
         )
-        return currentTick <= lowerTick || currentTick >= upperTick
+        return [
+            currentTick <= lowerTick || currentTick >= upperTick,
+            currentTick <= lowerTick ? TokenConvert.Token0 : TokenConvert.Token1,
+        ]
     }
 
-    public async resetCurrentTickIfNotDeviated(
+    // return if the tick is deviated
+    public async tryExecuteDeviationProtectionSwap(
         poolWithFetchedPositions: PoolWithFetchedPositions,
         currentTick: number,
     ) {
-        if (!await this.hasTickDeviated(poolWithFetchedPositions, currentTick)) {
-            const notDeviatedTimes = await this.incrementNotDeviatedTimes()
-            this.logger.log(
-                `[Tick Check] Current tick: ${currentTick}, Not deviated count: ${notDeviatedTimes}/${NOT_DEVIATED_TIMES}. ` +
-                "Accumulating data to ensure tick stability before reset."
+        const [isDeviated, tokenConvert] = this.hasTickDeviated(poolWithFetchedPositions, currentTick)
+        if (isDeviated) {
+            // const notDeviatedTimes = await this.incrementNotDeviatedTimes()
+            // this.logger.log(
+            //     `[Tick Check] Current tick: ${currentTick}, Not deviated count: ${notDeviatedTimes}/${NOT_DEVIATED_TIMES}. ` +
+            //     "Accumulating data to ensure tick stability before reset."
+            // )
+            // if (notDeviatedTimes >= NOT_DEVIATED_TIMES) {
+            //     await this.resetCachedCurrentTick()
+            //     await this.resetCachedNotDeviatedTimes()
+            //     return false
+            // }
+            // return true
+            //swap all liquidity to the rest of the pool
+            await this.cetusSwapService.zapSwap(
+                poolWithFetchedPositions.pool,
+                poolWithFetchedPositions.pair,
+                tokenConvert === TokenConvert.Token0,
             )
-            if (notDeviatedTimes >= NOT_DEVIATED_TIMES) {
-                await this.resetCachedCurrentTick()
-                await this.resetCachedNotDeviatedTimes()
-            }
+            return true
         }
+        return false
     }
 
     public getLowerAndUpperTicks(pool: Pool) {
@@ -152,4 +156,9 @@ export class TickManagerService {
             remainderFromTickSpacing
         return distance <= Number(tickSpacingPartial)
     }
+}
+
+export enum TokenConvert {
+    Token0 = "token0",
+    Token1 = "token1",
 }

@@ -4,7 +4,7 @@ export interface Pair {
     token0: TokenId
     token1: TokenId
     feeRate: number
-    defaultzeroInsteadOne: boolean
+    defaultZeroInsteadOne: boolean
 }
 
 export interface PairAllocation {
@@ -20,13 +20,13 @@ export const pairs: Record<PairId, Pair> = {
     [PairId.SuiIka02]: {
         token0: TokenId.Ika,
         token1: TokenId.Sui,
-        defaultzeroInsteadOne: true,
+        defaultZeroInsteadOne: true,
         feeRate: 0.002,
     },
     [PairId.SuiUsdc05]: {
         token0: TokenId.Sui,
         token1: TokenId.Usdc,
-        defaultzeroInsteadOne: false,
+        defaultZeroInsteadOne: false,
         feeRate: 0.005,
     },
 }

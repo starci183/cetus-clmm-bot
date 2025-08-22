@@ -57,7 +57,7 @@ export class PositionManagerService {
         const currentTick = await this.tickManagerService.getOrCacheCurrentTick(
             poolWithFetchedPositions,
         )
-        await this.tickManagerService.resetCurrentTickIfNotDeviated(
+        const success = await this.tickManagerService.tryExecuteDeviationProtectionSwap(
             poolWithFetchedPositions,
             currentTick,
         )
@@ -65,7 +65,10 @@ export class PositionManagerService {
         if (!positions || positions.length === 0) {
             this.logger.verbose("No positions found, creating a new position")
             // we create a position on the left
-            await this.addLiquidityToTheNextTick(poolWithFetchedPositions)
+            await this.addLiquidityToTheNextTick(
+                poolWithFetchedPositions, 
+                success ? !pair.defaultZeroInsteadOne : pair.defaultZeroInsteadOne
+            )
             return
         }
         const { isOutOfRange, leftOrRight } =
@@ -172,7 +175,7 @@ export class PositionManagerService {
   ) {
       const { pool, pair } = params
       if (!zeroInsteadOne) {
-          zeroInsteadOne = pair.defaultzeroInsteadOne
+          zeroInsteadOne = pair.defaultZeroInsteadOne
       }
       // STRICT - TO ENSURE ELIGIBLE TO ADD LIQUIDITY
       if (
