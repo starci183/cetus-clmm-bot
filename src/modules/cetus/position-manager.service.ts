@@ -19,7 +19,7 @@ import { envConfig } from "../env"
 import { Cache } from "cache-manager"
 import { InjectCache } from "../cache"
 
-const VIOLATE_STOP = 0.01 // when price move 1% we stop
+const VIOLATE_STOP = 0.025 // when price move 2.5% we stop for 3 hours
 const MAX_ALLOCATIONS_PER_15_MINUTES = 1 // 1 allocation per 15 minutes
 // cache keys
 const cacheKeys = {
@@ -29,7 +29,7 @@ const cacheKeys = {
     },
     numAllocations: {
         name: "numAllocations",
-        ttl: 60 * 60 * 1, // 1 hour
+        ttl: 60 * 60 * 15 // 15 minutes
     },
 }
 
