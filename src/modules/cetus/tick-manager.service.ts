@@ -87,7 +87,7 @@ export class TickManagerService {
             poolWithFetchedPositions,
             currentTick,
         )
-        return currentTick < lowerTick || currentTick > upperTick
+        return currentTick <= lowerTick || currentTick >= upperTick
     }
 
     public async resetCurrentTickIfNotDeviated(

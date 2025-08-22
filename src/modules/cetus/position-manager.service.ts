@@ -34,20 +34,8 @@ export class PositionManagerService {
 
     private async closeThenOpenPosition(
         poolWithFetchedPositions: PoolWithFetchedPositions,
-        currentTick: number,
         zeroInsteadOne?: boolean,
     ) {
-        const hasDeviated = await this.tickManagerService.hasTickDeviated(
-            poolWithFetchedPositions,
-            currentTick,
-        )
-        if (hasDeviated) {
-            this.logger.warn(
-                "Tick is deviated, we need to wait for the tick be safe...",
-            )
-            return
-        }
-
         const allocationExceeded =
       await this.allocationManagerService.checkAllocationExceeded()
         if (allocationExceeded) {
@@ -76,14 +64,6 @@ export class PositionManagerService {
         await this.tickManagerService.resetCurrentTickIfNotDeviated(
             poolWithFetchedPositions,
             currentTick,
-        )
-        // logging
-        console.log(poolWithFetchedPositions.pool.current_tick_index)
-        console.log(
-            `tick boundaries: 
-            ${this.tickManagerService.computeTickBoundaries(poolWithFetchedPositions, currentTick!).lowerTick}, 
-            ${this.tickManagerService.computeTickBoundaries(poolWithFetchedPositions, currentTick!).upperTick}
-            `,
         )
         const { positions, pair } = poolWithFetchedPositions
         if (!positions || positions.length === 0) {
@@ -126,7 +106,6 @@ export class PositionManagerService {
             }
             await this.closeThenOpenPosition(
                 poolWithFetchedPositions,
-                currentTick,
                 false,
             )
         } else {
@@ -153,7 +132,6 @@ export class PositionManagerService {
             }
             await this.closeThenOpenPosition(
                 poolWithFetchedPositions,
-                currentTick,
                 true,
             )
         }
