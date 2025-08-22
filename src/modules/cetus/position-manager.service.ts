@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from "@nestjs/common"
+import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common"
 import { OnEvent } from "@nestjs/event-emitter"
 import { PairId } from "./pairs"
 import { CetusEvent } from "./events"
@@ -38,7 +38,7 @@ const MIN_SUI_BALANCE = new BN(5).mul(
 ) // 0.5 SUI
 
 @Injectable()
-export class PositionManagerService {
+export class PositionManagerService implements OnModuleInit {
     private readonly logger = new Logger(PositionManagerService.name)
     constructor(
         @Inject(CETUS) private cetusClmmSdk: CetusClmmSDK,
@@ -46,6 +46,19 @@ export class PositionManagerService {
         @InjectCache()
         private readonly cacheManager: Cache,
     ) { }
+
+    async onModuleInit() {
+        // Log status
+        const currentTick = await this.cacheManager.get<number>(cacheKeys.currentTick.name) || 0 
+        this.logger.fatal(`Cached initial/latest earn current tick: ${currentTick}`)
+        const currentTickTtl = await this.cacheManager.ttl(cacheKeys.currentTick.name)
+        this.logger.fatal(`Cached price: ${TickMath.tickIndexToPrice(currentTick, tokens[TokenId.Ika].decimals, tokens[TokenId.Sui].decimals)}`)
+        this.logger.fatal(`Reset after ${(currentTickTtl || 0) - new Date().getTime()} ms`)
+        // Log num allocations
+        const numAllocations = await this.cacheManager.get<number>(cacheKeys.numAllocations.name) || 0
+        this.logger.fatal(`Cached num allocations: ${numAllocations - new Date().getTime()} ms`)
+        this.logger.fatal(`Reset after ${await this.cacheManager.ttl(cacheKeys.numAllocations.name)} ms`)
+    }
 
     @Cron(CronExpression.EVERY_3_HOURS)
     async resetCurrentTick() {
@@ -187,7 +200,7 @@ export class PositionManagerService {
         )
         if (leftOrRight === "right") {
             this.logger.verbose(
-                `Position is out of range (right), convert to fully ${pair.token1}`,
+                `Position is out of range (right), convert to fully ${tokens[pair.token1].name}`,
             )
             const tickDiff = Math.abs(
                 Number(poolWithFetchedPositions.pool.current_tick_index) -
@@ -211,7 +224,7 @@ export class PositionManagerService {
             return
         } else {
             this.logger.verbose(
-                `Position is out of range (left), convert to fully ${pair.token0}`,
+                `Position is out of range (left), convert to fully ${tokens[pair.token0].name}`,
             )
             const tickDiff = Math.abs(
                 Number(poolWithFetchedPositions.pool.current_tick_index) -
