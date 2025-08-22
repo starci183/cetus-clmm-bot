@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common"
+import { Inject, Injectable, Logger } from "@nestjs/common"
 import { OnEvent } from "@nestjs/event-emitter"
 import { PairId } from "./pairs"
 import { CetusEvent } from "./events"
@@ -12,150 +12,57 @@ import CetusClmmSDK, {
 } from "@cetusprotocol/cetus-sui-clmm-sdk"
 import { CETUS } from "./constants"
 import BN from "bn.js"
-import { TokenId, tokens } from "./tokens"
+import { tokens } from "./tokens"
 import { CetusSignerService } from "./cetus-signer.service"
-import { Cron, CronExpression } from "@nestjs/schedule"
-import { envConfig } from "../env"
 import { Cache } from "cache-manager"
 import { InjectCache } from "../cache"
+import { TickManagerService } from "./tick-manager.service"
+import { AllocationManagerService } from "./allocation-manager.service"
+import { BalanceManagerService } from "./balance-manager.service"
 
-const VIOLATE_STOP = 0.01 // when price move 1% we stop for 3 hours
-const MAX_ALLOCATIONS_PER_15_MINUTES = 1 // 1 allocation per 15 minutes
-// cache keys
-const cacheKeys = {
-    currentTick: {
-        name: "currentTick",
-        ttl:  1000 * 60 * 60 * 3, // 3 hours
-    },
-    numAllocations: {
-        name: "numAllocations",
-        ttl: 1000 * 60 * 60 * 15// 15 minutes
-    },
-}
-
-const MIN_SUI_BALANCE = new BN(5).mul(
-    new BN(10).pow(new BN(tokens[TokenId.Sui].decimals - 1)),
-) // 0.5 SUI
 
 @Injectable()
-export class PositionManagerService implements OnModuleInit {
+export class PositionManagerService {
     private readonly logger = new Logger(PositionManagerService.name)
     constructor(
         @Inject(CETUS) private cetusClmmSdk: CetusClmmSDK,
         private readonly cetusSigner: CetusSignerService,
         @InjectCache()
         private readonly cacheManager: Cache,
+        private readonly tickManagerService: TickManagerService,
+        private readonly allocationManagerService: AllocationManagerService,
+        private readonly balanceManagerService: BalanceManagerService,
     ) { }
-
-    async onModuleInit() {
-        // Log status
-        const currentTick = await this.cacheManager.get<number>(cacheKeys.currentTick.name) || 0 
-        this.logger.fatal(`Cached initial/latest earn current tick: ${currentTick}`)
-        const currentTickTtl = await this.cacheManager.ttl(cacheKeys.currentTick.name)
-        this.logger.fatal(`Cached price: ${TickMath.tickIndexToPrice(currentTick, tokens[TokenId.Ika].decimals, tokens[TokenId.Sui].decimals)}`)
-        this.logger.fatal(`Reset after ${(currentTickTtl || 0) - new Date().getTime()} ms`)
-        // Log num allocations
-        const numAllocations = await this.cacheManager.get<number>(cacheKeys.numAllocations.name) || 0
-        this.logger.fatal(`Cached num allocations: ${numAllocations - new Date().getTime()} ms`)
-        this.logger.fatal(`Reset after ${await this.cacheManager.ttl(cacheKeys.numAllocations.name)} ms`)
-    }
-
-    @Cron(CronExpression.EVERY_3_HOURS)
-    async resetCurrentTick() {
-        await this.cacheManager.del(cacheKeys.currentTick.name)
-    }
-
-    private checkTokenAddress(tokenAddress1: string, tokenAddress2: string) {
-        const suiAddresses = [
-            "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI",
-            "0x2::sui::SUI",
-        ]
-        if (suiAddresses.includes(tokenAddress1) && suiAddresses.includes(tokenAddress2)) {
-            return true
-        }
-        return tokenAddress1 === tokenAddress2
-    }
-
-    private computeTickBoundaries(
-        poolWithFetchedPositions: PoolWithFetchedPositions,
-        currentTick: number,
-    ) {
-        const { pool } = poolWithFetchedPositions
-        const [token0, token1] = [pool.coinTypeA, pool.coinTypeB].map(
-            (coinType) => Object.values(tokens).find(token => this.checkTokenAddress(token.address, coinType))!,
-        )
-        const priceAtCurrentTick = TickMath.tickIndexToPrice(
-            currentTick,
-            token0.decimals,
-            token1.decimals,
-        )
-        const [lowerPrice, upperPrice] = [
-            priceAtCurrentTick.mul(1 - VIOLATE_STOP),
-            priceAtCurrentTick.mul(1 + VIOLATE_STOP),
-        ]
-        const [lowerTick, upperTick] = [
-            TickMath.priceToTickIndex(lowerPrice, token0.decimals, token1.decimals),
-            TickMath.priceToTickIndex(upperPrice, token0.decimals, token1.decimals),
-        ]
-        return {
-            lowerTick,
-            upperTick,
-        }
-    }
-
-    @Cron("0 */15 * * * *")
-    async resetnumAllocations() {
-        await this.cacheManager.del(cacheKeys.numAllocations.name)
-    }
 
     private async closeThenOpenPosition(
         poolWithFetchedPositions: PoolWithFetchedPositions,
+        currentTick: number,
         zeroForOne?: boolean,
     ) {
-        const currentTick = await this.cacheManager.get<number>(
-            cacheKeys.currentTick.name,
-        )
-        if (currentTick !== undefined && currentTick !== null) {
-            const { lowerTick, upperTick } = this.computeTickBoundaries(
-                poolWithFetchedPositions,
-                currentTick,
-            )
-            if (
-                poolWithFetchedPositions.pool.current_tick_index < lowerTick ||
-                poolWithFetchedPositions.pool.current_tick_index > upperTick
-            ) {
-                this.logger.warn(
-                    `Price out of safe range: currentTick=${poolWithFetchedPositions.pool.current_tick_index}, lowerTick=${lowerTick}, upperTick=${upperTick}. Skipping allocation...`,
-                )
-                return
-            }
+        if (!this.tickManagerService.hasTickDeviated(poolWithFetchedPositions, currentTick)) {
+            this.logger.warn("Current tick is out of range, skipping...")
+            return
         }
-        const numAllocations = await this.cacheManager.get<number>(
-            cacheKeys.numAllocations.name,
+        const hasDeviated = await this.tickManagerService.hasTickDeviated(
+            poolWithFetchedPositions,
+            currentTick
         )
-        if (numAllocations && numAllocations >= MAX_ALLOCATIONS_PER_15_MINUTES) {
+        if (hasDeviated) {
+            this.logger.warn("Tick is deviated, we need to wait for the tick be safe...")
+            return
+        }
+
+        const allocationExceeded = await this.allocationManagerService.checkAllocationExceeded()
+        if (allocationExceeded) {
             this.logger.warn("Max allocations per 15 minutes reached, skipping...")
             return
         }
         await this.closePosition(poolWithFetchedPositions)
         await this.addLiquidityToTheNextTick(poolWithFetchedPositions, zeroForOne)
-
-        // after finish, we update the num allocations
-        await this.cacheManager.set(
-            cacheKeys.numAllocations.name,
-            (numAllocations || 0) + 1,
-            cacheKeys.numAllocations.ttl,
-        )
+        // after finish, we increment the allocation
+        await this.allocationManagerService.incrementAllocation()
     }
 
-    private checkEligibleToClosePosition(tickDiff: number, tickSpacing: number) {
-        if (tickDiff < Number(tickSpacing)) {
-            return false
-        }
-        const tickSpacingPartial = Math.floor(tickSpacing / 3)
-        const remainderFromTickSpacing = tickDiff % tickSpacing
-        return remainderFromTickSpacing <= Number(tickSpacingPartial)
-    }
 
     @OnEvent(CetusEvent.PoolsUpdated)
     async handlePoolsUpdated(
@@ -166,19 +73,18 @@ export class PositionManagerService implements OnModuleInit {
         if (!poolWithFetchedPositions) {
             throw new Error("Pool not found")
         }
-        const currentTick = await this.cacheManager.get<number>(
-            cacheKeys.currentTick.name,
-        )
-        if (currentTick === undefined || currentTick === null) {
-            await this.cacheManager.set(
-                cacheKeys.currentTick.name,
-                poolWithFetchedPositions.pool.current_tick_index,
-                cacheKeys.currentTick.ttl,
-            )
-        }
+        // we check if the current tick is safe
+        const currentTick = await this.tickManagerService.getOrCacheCurrentTick(poolWithFetchedPositions)
         console.log(poolWithFetchedPositions.pool.current_tick_index)
-        console.log(`tick boundaries: ${this.computeTickBoundaries(poolWithFetchedPositions, currentTick!).lowerTick}, ${this.computeTickBoundaries(poolWithFetchedPositions, currentTick!).upperTick}`)
-
+        console.log(
+            `tick boundaries: ${
+                this.tickManagerService.computeTickBoundaries(poolWithFetchedPositions, currentTick!).lowerTick
+            }, 
+            ${
+    this.tickManagerService.computeTickBoundaries(poolWithFetchedPositions, currentTick!).upperTick
+}
+            `,
+        )
         const { positions, pair } = poolWithFetchedPositions
         if (!positions || positions.length === 0) {
             this.logger.verbose("No positions found, creating a new position")
@@ -190,8 +96,6 @@ export class PositionManagerService implements OnModuleInit {
             await this.getFirstPositionRangeStatus(poolWithFetchedPositions)
         if (!isOutOfRange) {
             // reset the current tick since we are still in range
-            // mean that if get out of range and return back
-            await this.resetCurrentTick()
             this.logger.debug("Position is still in range, earning fees...")
             return
         }
@@ -210,7 +114,7 @@ export class PositionManagerService implements OnModuleInit {
                 `Tick diff: ${tickDiff}, tick spacing: ${poolWithFetchedPositions.pool.tickSpacing}.`,
             )
             if (
-                this.checkEligibleToClosePosition(
+                this.tickManagerService.checkEligibleToClosePosition(
                     tickDiff,
                     Number(poolWithFetchedPositions.pool.tickSpacing),
                 )
@@ -218,7 +122,7 @@ export class PositionManagerService implements OnModuleInit {
                 this.logger.verbose(
                     "Tick diff is too large and near enough to the next tick, we will close the position",
                 )
-                await this.closeThenOpenPosition(poolWithFetchedPositions, false)
+                await this.closeThenOpenPosition(poolWithFetchedPositions, currentTick, false)
                 return
             }
             return
@@ -234,7 +138,7 @@ export class PositionManagerService implements OnModuleInit {
                 `Tick diff: ${tickDiff}, tick spacing: ${poolWithFetchedPositions.pool.tickSpacing}.`,
             )
             if (
-                this.checkEligibleToClosePosition(
+                this.tickManagerService.checkEligibleToClosePosition(
                     tickDiff,
                     Number(poolWithFetchedPositions.pool.tickSpacing),
                 )
@@ -242,7 +146,7 @@ export class PositionManagerService implements OnModuleInit {
                 this.logger.verbose(
                     "Tick diff is too large and near enough to the next tick, we will close the position",
                 )
-                await this.closeThenOpenPosition(poolWithFetchedPositions, true)
+                await this.closeThenOpenPosition(poolWithFetchedPositions, currentTick, true)
                 return
             }
             return
@@ -298,32 +202,13 @@ export class PositionManagerService implements OnModuleInit {
         if (!zeroForOne) {
             zeroForOne = pair.defaultZeroForOne
         }
-        const [token0, token1] = [pair.token0, pair.token1].map(
-            (token) => tokens[token],
-        )
-        // fetch balance of your zero or one token
-        const balance = await this.cetusClmmSdk.fullClient.getBalance({
-            coinType: zeroForOne ? token0.address : token1.address,
-            owner: envConfig().sui.walletAddress,
-        })
-        // this help user always have enough balance to add liquidity
-        // and some sui to pay for the transaction
-        this.logger.debug(
-            `Balance of ${zeroForOne ? pair.token0 : pair.token1}: ${balance.totalBalance}`,
-        )
-        let actualAmount = new BN(balance.totalBalance)
-        if (actualAmount.eq(new BN(0))) {
-            this.logger.warn("Balance is less than 0, skipping...")
+        const [
+            maxAmount, 
+            isSkipped
+        ] = await this.balanceManagerService.calculateAvailableLiquidityAmount(pair.token0)
+        if (isSkipped) {
+            this.logger.warn("No liquidity available, skipping...")
             return
-        }
-        const tokenId = zeroForOne ? pair.token0 : pair.token1
-        if (tokenId === TokenId.Sui) {
-            if (new BN(balance.totalBalance).lt(MIN_SUI_BALANCE)) {
-                this.logger.warn("Balance of SUI is less than 0.5, skipping...")
-                return
-            } else {
-                actualAmount = new BN(balance.totalBalance).sub(MIN_SUI_BALANCE)
-            }
         }
         const { tickPrev, tickNext } = this.getLowerAndUpperTicks(pool)
         const tickSpacing = Number.parseInt(pool.tickSpacing)
@@ -337,8 +222,8 @@ export class PositionManagerService implements OnModuleInit {
         const fixedAmountA = zeroForOne
         //const currentSqrtPrice = new BN(pool.current_sqrt_price)
         const amounts = {
-            coinA: new BN(zeroForOne ? actualAmount : 0),
-            coinB: new BN(zeroForOne ? 0 : actualAmount),
+            coinA: new BN(zeroForOne ? maxAmount : 0),
+            coinB: new BN(zeroForOne ? 0 : maxAmount),
         }
         const addLiquidityFixedTokenPayload =
             await this.cetusClmmSdk.Position.createAddLiquidityFixTokenPayload({
@@ -361,11 +246,6 @@ export class PositionManagerService implements OnModuleInit {
         const transferTxn = await this.cetusClmmSdk.fullClient.sendTransaction(
             this.cetusSigner.getSigner(),
             addLiquidityFixedTokenPayload,
-        )
-        await this.cacheManager.set(
-            cacheKeys.currentTick.name,
-            pool.current_tick_index,
-            cacheKeys.currentTick.ttl,
         )
         this.logger.fatal(
             `Add liquidity successfully, Tx has: ${transferTxn?.digest}`,
