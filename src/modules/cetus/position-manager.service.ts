@@ -91,7 +91,8 @@ export class PositionManagerService {
         const currentTick = await this.cacheManager.get<number>(
             cacheKeys.currentTick.name,
         )
-        if (currentTick) {
+        const isCurrentTickUndefinedOrNull = currentTick === undefined || currentTick === null
+        if (!isCurrentTickUndefinedOrNull) {
             const { lowerTick, upperTick } = this.computeTickBoundaries(
                 poolWithFetchedPositions,
                 currentTick,
@@ -122,7 +123,7 @@ export class PositionManagerService {
             (numAllocations || 0) + 1,
             cacheKeys.numAllocations.ttl,
         )
-        if (!currentTick) {
+        if (isCurrentTickUndefinedOrNull) {
             // set current tick
             await this.cacheManager.set(
                 cacheKeys.currentTick.name,
