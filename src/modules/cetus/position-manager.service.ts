@@ -79,7 +79,7 @@ export class PositionManagerService {
         }
     }
 
-    @Cron("*/15 * * * * *")
+    @Cron("0 */15 * * * *")
     async resetnumAllocations() {
         await this.cacheManager.del(cacheKeys.numAllocations.name)
     }
@@ -280,7 +280,7 @@ export class PositionManagerService {
             `Balance of ${zeroForOne ? pair.token0 : pair.token1}: ${balance.totalBalance}`,
         )
         let actualAmount = new BN(balance.totalBalance)
-        if (actualAmount.lt(new BN(0))) {
+        if (actualAmount.eq(new BN(0))) {
             this.logger.warn("Balance is less than 0, skipping...")
             return
         }
