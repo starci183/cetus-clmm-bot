@@ -20,6 +20,7 @@ import { Cache } from "cache-manager"
 import { InjectCache } from "../cache"
 
 const VIOLATE_STOP = 0.01 // when price move 1% we stop
+const MAX_ALLOCATIONS_PER_15_MINUTES = 1 // 1 allocation per 15 minutes
 // cache keys
 const cacheKeys = {
     currentTick: {
@@ -78,7 +79,7 @@ export class PositionManagerService {
         }
     }
 
-    @Cron(CronExpression.EVERY_HOUR)
+    @Cron("*/15 * * * * *")
     async resetnumAllocations() {
         await this.cacheManager.del(cacheKeys.numAllocations.name)
     }
@@ -108,8 +109,8 @@ export class PositionManagerService {
         const numAllocations = await this.cacheManager.get<number>(
             cacheKeys.numAllocations.name,
         )
-        if (numAllocations && numAllocations >= cacheKeys.currentTick.ttl) {
-            this.logger.warn("Max allocations per 5 mins reached, skipping...")
+        if (numAllocations && numAllocations >= MAX_ALLOCATIONS_PER_15_MINUTES) {
+            this.logger.warn("Max allocations per 15 minutes reached, skipping...")
             return
         }
         await this.closePosition(poolWithFetchedPositions)
@@ -279,6 +280,10 @@ export class PositionManagerService {
             `Balance of ${zeroForOne ? pair.token0 : pair.token1}: ${balance.totalBalance}`,
         )
         let actualAmount = new BN(balance.totalBalance)
+        if (actualAmount.lt(new BN(0))) {
+            this.logger.warn("Balance is less than 0, skipping...")
+            return
+        }
         const tokenId = zeroForOne ? pair.token0 : pair.token1
         if (tokenId === TokenId.Sui) {
             if (new BN(balance.totalBalance).lt(MIN_SUI_BALANCE)) {
