@@ -40,8 +40,8 @@ export class CetusCoreService {
     
             /// No position -> try add liquidity
             if (!position) {
-                const success = await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
-                if (!success) return
+                await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
+                return
             }
     
             /// Already has a position
