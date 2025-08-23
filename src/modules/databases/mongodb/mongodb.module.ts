@@ -1,4 +1,4 @@
-import { DynamicModule, Module } from "@nestjs/common"
+import { DynamicModule, Logger, Module } from "@nestjs/common"
 import { MongooseModule as NestMongooseModule } from "@nestjs/mongoose"
 import {
     LiquidityRangeSchema,
@@ -22,12 +22,13 @@ import {
 
 @Module({})
 export class MongooseModule extends ConfigurableModuleClass {
+    private static readonly logger = new Logger(MongooseModule.name)
     public static forRoot(options: typeof OPTIONS_TYPE = {}): DynamicModule {
         const dynamicModule = super.forRoot(options)
         const { dbName, host, password, port, username } =
       envConfig().databases.mongodb
         const url = `mongodb://${username}:${password}@${host}:${port}`
-
+        this.logger.debug(`MongoDB URL: ${url}`)
         return {
             ...dynamicModule,
             imports: [
