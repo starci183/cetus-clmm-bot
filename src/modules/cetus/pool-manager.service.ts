@@ -69,9 +69,7 @@ export class PoolManagerService {
             this.cetusV3Pools[profilePair.id.toString()] = {
                 pool,
                 position,
-                pair,
-                priorityToken:
-                    profilePair.priorityToken === tokenA.id ? tokenA : tokenB,
+                profilePair,
             }
             this.logger.debug(`Updated pool for ${pair.displayId}`)
         }

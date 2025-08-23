@@ -14,4 +14,15 @@ export class AmountHelpersService {
             new Decimal(amount).mul(new Decimal(10).pow(decimals)).toString(),
         )
     }
+
+    public toDenomination(tokenId: TokenId, amount: BN): number {
+        const decimals = this.baseHelpersService.getDecimals(tokenId)
+        const value = new BN(amount)
+            .mul(new BN(10).pow(new BN(5)))
+            .div(new BN(10).pow(new BN(decimals)))
+            .toString()
+        return new Decimal(value)
+            .div(new Decimal(10).pow(new Decimal(5)))
+            .toNumber()
+    }
 }

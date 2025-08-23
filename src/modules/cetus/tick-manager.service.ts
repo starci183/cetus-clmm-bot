@@ -1,164 +1,106 @@
-// import { Injectable, Logger } from "@nestjs/common"
-// import { Cache } from "cache-manager"
-// import { InjectCache } from "../cache"
-// import { PoolWithPosition } from "./types"
-// import { MixinService } from "./mixin.service"
-// import { tokens } from "./tokens"
-// import { Pool, TickMath } from "@cetusprotocol/cetus-sui-clmm-sdk"
-// import { Cron } from "@nestjs/schedule"
-// import { CetusSwapService } from "./cetus-swap.service"
+import { Injectable, Logger } from "@nestjs/common"
+import { Pool, Position } from "@cetusprotocol/cetus-sui-clmm-sdk"
+import { ProfilePairSchema } from "@/modules/databases"
+import { MemDbService } from "@/modules/databases"
 
-// const CACHE_TICK_NAME = "CURRENT_TICK"
-// const CACHE_TICK_TTL = 1000 * 60 * 60 * 24 * 3 // 3 days
-// const VIOLATE_STOP = 0.01 // 1%
+const TICK_DEVIATION_THRESHOLD = 1/4
 
-// @Injectable()
-// export class TickManagerService {
-//     private readonly logger = new Logger(TickManagerService.name)
-//     constructor(
-//         @InjectCache()
-//         private readonly cacheManager: Cache,
-//         private readonly mixinService: MixinService,
-//         private readonly cetusSwapService: CetusSwapService,
-//     ) { }
+@Injectable()
+export class TickManagerService {
+    private readonly logger = new Logger(TickManagerService.name)
+    constructor(
+        private readonly memdbService: MemDbService,
+    ) { }
 
-//     // 3 days cooling period
-//     @Cron("0 0 */3 * *")
-//     public async resetCurrentTick() {
-//         await this.resetCachedCurrentTick()
-//     }
+    public tickSpacing(pool: Pool) {
+        return Number.parseInt(pool.tickSpacing)
+    }
 
-//     public async cacheCurrentTick(currentTick: number) {
-//         await this.cacheManager.set(CACHE_TICK_NAME, currentTick, CACHE_TICK_TTL)
-//     }
+    public currentTick(pool: Pool) {
+        return pool.current_tick_index
+    }
 
-//     public async getCachedCurrentTick() {
-//         return await this.cacheManager.get<number>(CACHE_TICK_NAME)
-//     }
+    public tickBounds(pool: Pool) {
+        const tickSpacing = this.tickSpacing(pool)
+        const currentTick = this.currentTick(pool)
+        return [
+            Math.floor(currentTick / tickSpacing) * tickSpacing,
+            Math.ceil(currentTick / tickSpacing) * tickSpacing,
+        ]
+    }
 
-//     public async resetCachedCurrentTick() {
-//         await this.cacheManager.del(CACHE_TICK_NAME)
-//     }
+    public tickDistanceBetweenPriorityBound(
+        pool: Pool,
+        priorityAOverB: boolean
+    ) {
+        const currentTick = this.currentTick(pool)
+        const [lowerTick, upperTick] = this.tickBounds(pool)
+        return priorityAOverB ? Math.abs(upperTick - currentTick) : Math.abs(lowerTick - currentTick)
+    }
 
-//     public computeTickBoundaries(
-//         PoolWithPosition: PoolWithPosition,
-//         currentTick: number,
-//     ) {
-//         const { pool } = PoolWithPosition
-//         const [token0, token1] = [pool.coinTypeA, pool.coinTypeB].map(
-//             (coinType) =>
-//                 Object.values(tokens).find((token) =>
-//                     this.mixinService.checkTokenAddress(token.address, coinType),
-//                 )!,
-//         )
-//         const priceAtCurrentTick = TickMath.tickIndexToPrice(
-//             currentTick,
-//             token0.decimals,
-//             token1.decimals,
-//         )
-//         const [lowerPrice, upperPrice] = [
-//             priceAtCurrentTick.mul(1 - VIOLATE_STOP),
-//             priceAtCurrentTick.mul(1 + VIOLATE_STOP),
-//         ]
-//         const [lowerTick, upperTick] = [
-//             TickMath.priceToTickIndex(lowerPrice, token0.decimals, token1.decimals),
-//             TickMath.priceToTickIndex(upperPrice, token0.decimals, token1.decimals),
-//         ]
-//         return {
-//             lowerTick,
-//             upperTick,
-//         }
-//     }
+    public computeAllowedTickDeviation(
+        pool: Pool
+    ) {
+        const tickSpacing = this.tickSpacing(pool)
+        return Math.floor(tickSpacing * TICK_DEVIATION_THRESHOLD)
+    }
 
-//     public async getOrCacheCurrentTick(
-//         PoolWithPosition: PoolWithPosition,
-//     ) {
-//         let currentTick = await this.getCachedCurrentTick()
-//         if (!currentTick) {
-//             await this.cacheCurrentTick(
-//                 PoolWithPosition.pool.current_tick_index,
-//             )
-//             currentTick = PoolWithPosition.pool.current_tick_index
-//         }
-//         return currentTick
-//     }
+    public canAddLiquidity(
+        pool: Pool,
+        profilePair: ProfilePairSchema
+    ) {
+        const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
+        const tickDistance = this.tickDistanceBetweenPriorityBound(pool, priorityAOverB)
+        const tickMaxDeviation = this.computeAllowedTickDeviation(pool)
+        return tickDistance <= tickMaxDeviation
+    }
 
-//     public hasTickDeviated(
-//         PoolWithPosition: PoolWithPosition,
-//         currentTick: number,
-//     ): [boolean, TokenConvert] {
-//         const { lowerTick, upperTick } = this.computeTickBoundaries(
-//             PoolWithPosition,
-//             currentTick,
-//         )
-//         return [
-//             currentTick <= lowerTick || currentTick >= upperTick,
-//             currentTick <= lowerTick ? TokenConvert.Token0 : TokenConvert.Token1,
-//         ]
-//     }
+    public computePositionRange(
+        pool: Pool,
+        position: Position,
+    ): PositionOutOfRangeResponse {
+        const [positionTickUpper, positionTickLower] = [position.tick_upper_index, position.tick_lower_index]
+        const currentTick = this.currentTick(pool)
+        // the position still in the range, keep earning fees
+        if (positionTickUpper > currentTick && positionTickLower < currentTick) {
+            return {
+                isOutOfRange: false,
+                tickDistance: 0,
+            }
+        }
+        if (positionTickUpper < currentTick) {
+            return {
+                isOutOfRange: true,
+                tickDistance: Math.abs(positionTickUpper - currentTick),
+                leftOverRight: false,
+            }
+        } else {
+            return {
+                isOutOfRange: true,
+                tickDistance: Math.abs(currentTick - positionTickLower),
+                leftOverRight: true,
+            }
+        }
+    }
 
-//     // return if the tick is deviated
-//     public async tryExecuteDeviationProtectionSwap(
-//         PoolWithPosition: PoolWithPosition,
-//         currentTick: number,
-//     ) {
-//         const [isDeviated, tokenConvert] = this.hasTickDeviated(PoolWithPosition, currentTick)
-//         if (isDeviated) {
-//             // const notDeviatedTimes = await this.incrementNotDeviatedTimes()
-//             // this.logger.log(
-//             //     `[Tick Check] Current tick: ${currentTick}, Not deviated count: ${notDeviatedTimes}/${NOT_DEVIATED_TIMES}. ` +
-//             //     "Accumulating data to ensure tick stability before reset."
-//             // )
-//             // if (notDeviatedTimes >= NOT_DEVIATED_TIMES) {
-//             //     await this.resetCachedCurrentTick()
-//             //     await this.resetCachedNotDeviatedTimes()
-//             //     return false
-//             // }
-//             // return true
-//             //swap all liquidity to the rest of the pool
-//             await this.cetusSwapService.zapSwap(
-//                 PoolWithPosition.pool,
-//                 PoolWithPosition.pair,
-//                 tokenConvert === TokenConvert.Token0,
-//             )
-//             return true
-//         }
-//         return false
-//     }
+    public canMovePosition(
+        pool: Pool,
+        position: Position,
+        profilePair: ProfilePairSchema
+    ) {
+        const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
+        const tickSpacing = this.tickSpacing(pool)
+        const canAddLiquidity = this.canAddLiquidity(pool, profilePair)
+        if (priorityAOverB) {
+            return canAddLiquidity && ((Math.abs(position.tick_lower_index - pool.current_tick_index) > tickSpacing))
+        } else {
+            return canAddLiquidity && ((Math.abs(position.tick_upper_index - pool.current_tick_index) > tickSpacing))
+        }
+    }
+}
 
-//     public getLowerAndUpperTicks(pool: Pool) {
-//         const tickSpacing = Number(pool.tickSpacing)
-//         const current = pool.current_tick_index
-//         return {
-//             tickPrev: Math.floor(current / tickSpacing) * tickSpacing,
-//             tickNext: Math.ceil(current / tickSpacing) * tickSpacing,
-//         }
-//     }
-
-//     public checkEligibleToClosePosition(tickDiff: number, tickSpacing: number) {
-//         if (tickDiff < Number(tickSpacing)) {
-//             return false
-//         }
-//         const tickSpacingPartial = Math.floor(tickSpacing / 3)
-//         const remainderFromTickSpacing = tickDiff % tickSpacing
-//         return remainderFromTickSpacing <= Number(tickSpacingPartial)
-//     }
-
-//     public checkEligibleToAddLiquidity(
-//         zeroInsteadOne: boolean, 
-//         currentTick: number, 
-//         tickSpacing: number
-//     ) {
-//         const remainderFromTickSpacing = currentTick % tickSpacing
-//         const tickSpacingPartial = Math.floor(tickSpacing / 3)
-//         const distance = zeroInsteadOne ? 
-//             tickSpacing - remainderFromTickSpacing : 
-//             remainderFromTickSpacing
-//         return distance <= Number(tickSpacingPartial)
-//     }
-// }
-
-// export enum TokenConvert {
-//     Token0 = "token0",
-//     Token1 = "token1",
-// }
+export interface PositionOutOfRangeResponse {
+    isOutOfRange: boolean
+    tickDistance: number
+    leftOverRight?: boolean
+}

@@ -1,10 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { AbstractSchema } from "./abstract"
-import { Schema as MongooseSchema } from "mongoose"
+import { Schema as MongooseSchema, Types } from "mongoose"
 import { ProfilePairSchema } from "./profile-pair.schema"
 
-// range mean [-1%, +1%] from the first liquidity provide
-// to the current tick, we will move the positions over this range
 @Schema({
     timestamps: true,
     collection: "liquidity_ranges",
@@ -30,7 +28,7 @@ export class LiquidityRangeSchema extends AbstractSchema {
 
     // the profile pair that this range belongs to
     @Prop({ type: MongooseSchema.Types.ObjectId, ref: ProfilePairSchema.name })
-        profilePair: ProfilePairSchema
+        profilePair: ProfilePairSchema | Types.ObjectId
 
     // original capital
     @Prop({ type: Number, default: 0 })
@@ -39,10 +37,6 @@ export class LiquidityRangeSchema extends AbstractSchema {
     // final capital
     @Prop({ type: Number, default: 0 })
         finalCapital: number
-
-    // time duration of the range
-    @Prop({ type: Number, default: 0 })
-        timeDuration: number
 }
 
 export const LiquidityRangeSchemaClass =

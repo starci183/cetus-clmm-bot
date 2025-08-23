@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from "@nestjs/common"
 import {
     InjectMongoose,
     PairSchema,
+    ProfilePairSchema,
     ProfileSchema,
     TokenSchema,
 } from "../mongodb"
@@ -78,5 +79,16 @@ export class MemDbService implements OnModuleInit {
             profilePair.pair = pair
         }
         return clonedProfile
+    }
+
+    public priorityAOverB(
+        profilePair: ProfilePairSchema
+    ) {
+        const pair = profilePair.pair as PairSchema
+        const tokenA = pair.tokenA as TokenSchema
+        if (profilePair.priorityToken.id === tokenA.id) {
+            return true
+        }
+        return false
     }
 }

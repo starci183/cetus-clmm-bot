@@ -1,9 +1,8 @@
 import { Pool, Position } from "@cetusprotocol/cetus-sui-clmm-sdk"
-import { PairSchema, TokenSchema } from "../databases"
+import { ProfilePairSchema } from "../databases"
 
 export interface PoolWithPosition {
     pool: Pool
     position: Position
-    pair: PairSchema
-    priorityToken: TokenSchema
+    profilePair: ProfilePairSchema
 }

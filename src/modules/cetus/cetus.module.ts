@@ -8,7 +8,10 @@ import { ConfigurableModuleClass } from "./cetus.module-definition"
 import { CetusSignerService } from "./cetus-signer.service"
 // import { MixinService } from "./mixin.service"
 // import { AllocationManagerService } from "./allocation-manager.service"
-// import { TickManagerService } from "./tick-manager.service"
+import { TickManagerService } from "./tick-manager.service"
+import { BalanceManagerService } from "./balance-manager.service"
+import { CetusActionService } from "./action.service"
+import { CetusCoreService } from "./core.service"
 // import { BalanceManagerService } from "./balance-manager.service"
 // import { CetusSwapService } from "./cetus-swap.service"
 @Module({
@@ -19,7 +22,11 @@ import { CetusSignerService } from "./cetus-signer.service"
         getSuiClientProvider(),
         PoolManagerService,
         CetusSwapService,
-        CetusSignerService
+        CetusSignerService,
+        TickManagerService,
+        BalanceManagerService,
+        CetusActionService,
+        CetusCoreService
         //MixinService,
         //CetusSwapService,
         //AllocationManagerService,
