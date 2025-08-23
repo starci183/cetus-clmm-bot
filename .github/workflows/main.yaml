@@ -25,7 +25,7 @@ jobs:
           REDIS_TTL: ${{ secrets.REDIS_TTL }}
           MONGODB_HOST: ${{ secrets.MONGODB_HOST }}
           MONGODB_PORT: ${{ secrets.MONGODB_PORT }}
-          MONGODB_USER: ${{ secrets.MONGODB_USER }}
+          MONGODB_USERNAME: ${{ secrets.MONGODB_USERNAME }}
           MONGODB_PASSWORD: ${{ secrets.MONGODB_PASSWORD }}
           MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME }}
         run: docker compose -p cetus-clmm-bot up --build -d
