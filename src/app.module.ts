@@ -2,10 +2,11 @@ import { Module } from "@nestjs/common"
 import { EnvModule } from "@/modules/env"
 import { ScheduleModule } from "@nestjs/schedule"
 import { EventEmitterModule } from "@nestjs/event-emitter"
-import { CetusModule } from "./modules/cetus"
-import { CacheModule } from "./modules/cache"
+import { CetusModule } from "@/modules/cetus"
+import { CacheModule } from "@/modules/cache"
 import { MemDbModule, MongooseModule, SeedersModule } from "./modules/databases"
-import { MixinModule } from "./modules/mixin"
+import { MixinModule } from "@/modules/mixin"
+import { NumberModule } from "@/modules/number"
 
 @Module({
     imports: [
@@ -17,6 +18,9 @@ import { MixinModule } from "./modules/mixin"
             isGlobal: true,
         }),
         MemDbModule.register({
+            isGlobal: true,
+        }),
+        NumberModule.register({
             isGlobal: true,
         }),
         MongooseModule.forRoot(),

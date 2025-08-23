@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@cetusprotocol/aggregator-sdk": "^1.0.3",
     "@cetusprotocol/cetus-sui-clmm-sdk": "^5.4.0",
     "@keyv/redis": "^5.1.1",
     "@nestjs/cache-manager": "^3.0.1",
@@ -37,6 +38,7 @@
     "decimal.js": "^10.6.0",
     "decimals": "^1.0.0",
     "ioredis": "^5.7.0",
+    "lodash": "^4.17.21",
     "nestjs-seeder": "^0.3.2",
     "nodemailer": "^7.0.5",
     "p-retry": "^7.0.0",
@@ -56,6 +58,7 @@
     "@swc/core": "^1.10.7",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
+    "@types/lodash": "^4.17.20",
     "@types/node": "^22.10.7",
     "@types/supertest": "^6.0.2",
     "eslint": "^9.33.0",

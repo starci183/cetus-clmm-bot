@@ -4,5 +4,6 @@ import { MemDbService } from "./memdb.service"
 
 @Module({
     providers: [MemDbService],
+    exports: [MemDbService],
 })
 export class MemDbModule extends ConfigurableModuleClass {}

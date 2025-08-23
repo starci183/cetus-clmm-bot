@@ -4,7 +4,7 @@ import { PairSchema } from "./pair.schema"
 import { Schema as MongooseSchema, Types } from "mongoose"
 import { TokenSchema } from "./token.schema"
 
-@Schema({ timestamps: true, autoCreate: false })
+@Schema({ timestamps: true, autoCreate: false, id: true })
 export class ProfilePairSchema extends AbstractSchema {
   @Prop({
       type: MongooseSchema.Types.ObjectId,

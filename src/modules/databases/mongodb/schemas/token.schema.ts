@@ -16,6 +16,11 @@ export class TokenSchema extends AbstractSchema {
     @Prop({
         required: true,
     })
+        name: string
+    
+    @Prop({
+        required: true,
+    })
         address: string
 
     @Prop({

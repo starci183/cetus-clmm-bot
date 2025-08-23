@@ -35,8 +35,7 @@ export class ProfileSeeder implements Seeder {
         try {
             await this.connection.model<ProfileSchema>(ProfileSchema.name).create(data)
             this.logger.verbose("Pairs seeded successfully")
-        } catch (e){
-            console.log(e)
+        } catch {
             //(error)
             //this.logger.error(error)
         }

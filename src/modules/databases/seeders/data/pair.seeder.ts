@@ -21,8 +21,8 @@ export class PairSeeder implements Seeder {
             {
                 _id: createObjectId(PairId.SuiIka02),
                 displayId: PairId.SuiIka02,
-                tokenA: createObjectId(TokenId.Sui),
-                tokenB: createObjectId(TokenId.Ika),
+                tokenA: createObjectId(TokenId.Ika),
+                tokenB: createObjectId(TokenId.Sui),
                 feeRate: 0.002,
             },
             {

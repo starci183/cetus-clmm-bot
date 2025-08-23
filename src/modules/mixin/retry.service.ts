@@ -34,7 +34,6 @@ export class RetryService {
                 `Error retrying action: ${error.message}`,
                 error.stack,
             )
-            
         }
     }
 }

@@ -15,6 +15,7 @@ import {
 @Schema({
     timestamps: true,
     collection: "profiles",
+    id: true,
 })
 export class ProfileSchema extends AbstractSchema {
     @Prop({ type: String, required: true })
