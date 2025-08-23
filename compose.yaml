@@ -26,7 +26,7 @@ services:
       MONGODB_USER: ${MONGODB_USER}
       MONGODB_PASSWORD: ${MONGODB_PASSWORD}
       MONGODB_DB_NAME: ${MONGODB_DB_NAME}
-    ports:
+    ports: 
       - 4699:4699
 
 # The commented out section below is an example of how to define a PostgreSQL
