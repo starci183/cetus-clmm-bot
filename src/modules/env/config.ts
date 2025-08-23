@@ -16,5 +16,14 @@ export const envConfig = () => ({
         port: process.env.REDIS_PORT || "",
         password: process.env.REDIS_PASSWORD || "",
         ttl: Number(process.env.REDIS_TTL) || 60000,
+    },
+    databases: {
+        mongodb: {
+            host: process.env.MONGODB_HOST || "",
+            port: process.env.MONGODB_PORT || "",
+            username: process.env.MONGODB_USERNAME || "",
+            password: process.env.MONGODB_PASSWORD || "",
+            dbName: process.env.MONGODB_DB_NAME || "",
+        }
     }
 })
