@@ -51,7 +51,8 @@ export class CetusSwapService {
         if (amount) {
             rawAmount = this.amountHelpersService.toRaw(priorityToken.id, amount)
         } else {
-            const { maxAmount } = await this.balanceManagerService.calculateAvailableBalance(priorityToken.id)
+            const { displayId } = priorityToken as TokenSchema
+            const { maxAmount } = await this.balanceManagerService.calculateAvailableBalance(displayId)
             rawAmount = maxAmount
         }
         const tokenA = _pair.tokenA as TokenSchema

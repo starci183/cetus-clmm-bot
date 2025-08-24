@@ -77,6 +77,7 @@ export class MemDbService implements OnModuleInit {
                 throw new Error(`Pair not found for ${profilePair.pair}`)
             }
             profilePair.pair = pair
+            profilePair.priorityToken = (profilePair.priorityToken.toString() === pair.tokenA.id.toString()) ? pair.tokenA : pair.tokenB
         }
         return clonedProfile
     }

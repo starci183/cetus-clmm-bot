@@ -1,0 +1,89 @@
+{
+  "68a99745ec4afbd7dfdb1d02": {
+    "pool": {
+      "poolAddress": "0xc23e7e8a74f0b18af4dfb7c3280e2a56916ec4d41e14416f85184a8aab6b7789",
+      "poolType": "0x1eabed72c53feb3805120a081dc15963c204dc8d091542592abaf7a35689b2fb::pool::Pool<0x7262fb2f7a3a14c888c438a3cd9b912469a58cf60f367352c46584262e8299aa::ika::IKA, 0x2::sui::SUI>",
+      "coinTypeA": "0x7262fb2f7a3a14c888c438a3cd9b912469a58cf60f367352c46584262e8299aa::ika::IKA",
+      "coinTypeB": "0x2::sui::SUI",
+      "coinAmountA": "20852702151405955",
+      "coinAmountB": "80847325764157",
+      "current_sqrt_price": "1719312755232562824",
+      "current_tick_index": -47462,
+      "fee_growth_global_a": "4235181609479679477",
+      "fee_growth_global_b": "37376288465893933",
+      "fee_protocol_coin_a": "63284100265870",
+      "fee_protocol_coin_b": "559870390087",
+      "fee_rate": "2000",
+      "is_pause": false,
+      "liquidity": "400723404805255737",
+      "position_manager": {
+        "positions_handle": "0x634ea895082acaee4b9ab495c69846f82b0a0200feb2b5b53fb76204ab44e6ad",
+        "size": "234"
+      },
+      "rewarder_infos": [
+        {
+          "emissions_per_second": "15250162450195901074394074075",
+          "coinAddress": "0x7262fb2f7a3a14c888c438a3cd9b912469a58cf60f367352c46584262e8299aa::ika::IKA",
+          "growth_global": "1841490413590981279",
+          "emissionsEveryDay": 71428000000000
+        },
+        {
+          "emissions_per_second": "2348543805680614210370370371",
+          "coinAddress": "0x06864a6f921804860930db6ddbe2e16acdf8504495ea7481637a1c8b9a8fe54b::cetus::CETUS",
+          "growth_global": "281796019536166382",
+          "emissionsEveryDay": 11000000000000
+        }
+      ],
+      "rewarder_last_updated_time": "1756012279",
+      "tickSpacing": 40,
+      "ticks_handle": "0x7e1b0f1abc1c45f98cdd5d7c7f45b9441d9004ebd1cee5154c30532f4f61a3ed",
+      "uri": "https://bq7bkvdje7gvgmv66hrxdy7wx5h5ggtrrnmt66rdkkehb64rvz3q.arweave.net/DD4VVGknzVMyvvHjceP2v0_TGnGLWT96I1KIcPuRrnc",
+      "index": 34444,
+      "name": "IKA-SUI[40]"
+    },
+    "profilePair": {
+      "pair": {
+        "displayId": "sui-ika-0.2",
+        "tokenA": {
+          "displayId": "ika",
+          "name": "IKA",
+          "address": "0x7262fb2f7a3a14c888c438a3cd9b912469a58cf60f367352c46584262e8299aa::ika::IKA",
+          "decimals": 9,
+          "createdAt": "2025-08-23T10:43:34.144Z",
+          "updatedAt": "2025-08-23T10:43:34.144Z",
+          "__v": 0,
+          "id": "000000000000000000696b61"
+        },
+        "tokenB": {
+          "displayId": "sui",
+          "name": "SUI",
+          "address": "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI",
+          "decimals": 9,
+          "createdAt": "2025-08-23T10:43:34.144Z",
+          "updatedAt": "2025-08-23T10:43:34.144Z",
+          "__v": 0,
+          "id": "000000000000000000737569"
+        },
+        "feeRate": 0.002,
+        "createdAt": "2025-08-23T13:22:30.590Z",
+        "updatedAt": "2025-08-23T13:22:30.590Z",
+        "__v": 0,
+        "id": "007375692d696b612d302e32"
+      },
+      "priorityToken": {
+        "displayId": "sui",
+        "name": "SUI",
+        "address": "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI",
+        "decimals": 9,
+        "createdAt": "2025-08-23T10:43:34.144Z",
+        "updatedAt": "2025-08-23T10:43:34.144Z",
+        "__v": 0,
+        "id": "000000000000000000737569"
+      },
+      "capitalAllocatedPercentage": 100,
+      "createdAt": "2025-08-23T10:26:13.506Z",
+      "updatedAt": "2025-08-23T10:26:13.506Z",
+      "id": "68a99745ec4afbd7dfdb1d02"
+    }
+  }
+}
