@@ -17,6 +17,7 @@ export class ProfileSeeder implements Seeder {
 
     public async seed(): Promise<void> {
         this.logger.debug("Seeding profiles...")
+        await this.drop()
         const data: Array<DeepPartial<ProfileSchema>> = [
             {
                 _id: createObjectId(PROFILE_DEFAULT),
@@ -24,9 +25,9 @@ export class ProfileSeeder implements Seeder {
                 description: "Default profile for everyone to farm SUI",
                 profilePairs: [
                     {
-                        pair: createObjectId(PairId.SuiIka02),
+                        pair: createObjectId(PairId.SuiUsdc005),
                         priorityToken: createObjectId(TokenId.Sui),
-                        capitalAllocatedPercentage: 100,       
+                        capitalAllocatedMax: 100,       
                     },
                 ],
                 liquidityRanges: []

@@ -96,6 +96,7 @@ export class CetusActionService {
         const { maxAmount, isAvailable } =
       await this.balanceManagerService.calculateAvailableBalance(
           tokenToAdd.displayId,
+          profilePair.capitalAllocatedMax,
       )
         if (!isAvailable) {
             this.logger.error("No enough balance to add liquidity, skipping...")
@@ -115,24 +116,24 @@ export class CetusActionService {
             coinA: new BN(priorityAOverB ? maxAmount : 0),
             coinB: new BN(priorityAOverB ? 0 : maxAmount),
         }
-        const addLiquidityFixedTokenPayload =
-      await this.cetusClmmSdk.Position.createAddLiquidityFixTokenPayload({
-          coinTypeA: pool.coinTypeA,
-          coinTypeB: pool.coinTypeB,
-          pool_id: pool.poolAddress,
-          tick_lower: positionTickLower.toString(),
-          tick_upper: positionTickUpper.toString(),
-          fix_amount_a: fixedAmountA,
-          amount_a: amounts.coinA.toString(),
-          amount_b: amounts.coinB.toString(),
-          slippage: slippageTolerance,
-          is_open: true,
-          rewarder_coin_types: pool.rewarder_infos.map(
-              (rewarder) => rewarder.coinAddress,
-          ),
-          pos_id: "",
-          collect_fee: false,
-      })
+        const addLiquidityFixedTokenPayload = 
+        await this.cetusClmmSdk.Position.createAddLiquidityFixTokenPayload({
+            coinTypeA: pool.coinTypeA,
+            coinTypeB: pool.coinTypeB,
+            pool_id: pool.poolAddress,
+            tick_lower: positionTickLower.toString(),
+            tick_upper: positionTickUpper.toString(),
+            fix_amount_a: fixedAmountA,
+            amount_a: amounts.coinA.toString(),
+            amount_b: amounts.coinB.toString(),
+            slippage: slippageTolerance,
+            is_open: true,
+            rewarder_coin_types: pool.rewarder_infos.map(
+                (rewarder) => rewarder.coinAddress,
+            ),
+            pos_id: "",
+            collect_fee: false,
+        })
 
         // prev balance before send txn
         const prevBalance = await this.balanceManagerService.getBalance(

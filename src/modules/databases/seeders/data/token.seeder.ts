@@ -17,6 +17,7 @@ export class TokenSeeder implements Seeder {
 
     public async seed(): Promise<void> {
         this.logger.debug("Seeding tokens...")
+        await this.drop()
         const data: Array<Partial<TokenSchema>> = [
             {
                 _id: createObjectId(TokenId.Usdc),

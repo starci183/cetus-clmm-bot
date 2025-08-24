@@ -13,7 +13,7 @@ export class BalanceManagerService {
     private readonly cetusClmmSdk: CetusClmmSDK,
     private readonly memdbService: MemDbService,
     private readonly amountHelpersService: AmountHelpersService,
-    ) { }
+    ) {}
 
     private getMinSuiBalance(): BN {
         const token = this.memdbService.tokens.find(
@@ -36,11 +36,15 @@ export class BalanceManagerService {
             coinType: token.address,
             owner: envConfig().sui.walletAddress,
         })
-        return this.amountHelpersService.toDenomination(tokenId, new BN(totalBalance))
+        return this.amountHelpersService.toDenomination(
+            tokenId,
+            new BN(totalBalance),
+        )
     }
 
     public async calculateAvailableBalance(
         tokenId: TokenId,
+        capitalAllocatedMax: number = 20,
     ): Promise<CalculateAvailableBalanceResponse> {
         const token = this.memdbService.tokens.find(
             (token) => token.displayId === tokenId,
@@ -56,6 +60,12 @@ export class BalanceManagerService {
         if (tokenId === TokenId.Sui) {
             maxAmount = maxAmount.sub(this.getMinSuiBalance())
         }
+        const _capitalAllocatedMax = new BN(capitalAllocatedMax).mul(
+            new BN(10).pow(new BN(token.decimals)),
+        )
+        maxAmount = maxAmount.gt(_capitalAllocatedMax)
+            ? _capitalAllocatedMax
+            : maxAmount
         return {
             maxAmount,
             isAvailable: maxAmount.gt(new BN(0)),

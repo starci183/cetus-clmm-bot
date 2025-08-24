@@ -193,7 +193,7 @@ if (isOutOfRange) {
   profilePairs: [{
     pair: PairSchema,           // Reference to pair
     priorityToken: TokenSchema, // Preferred token to hold
-    capitalAllocatedPercentage: number
+    capitalAllocatedMax: number
   }]
 }
 ```

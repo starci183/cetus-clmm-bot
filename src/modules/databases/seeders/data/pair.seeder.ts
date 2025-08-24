@@ -17,6 +17,7 @@ export class PairSeeder implements Seeder {
 
     public async seed(): Promise<void> {
         this.logger.debug("Seeding pairs...")
+        await this.drop()
         const data: Array<Partial<PairSchema>> = [
             {
                 _id: createObjectId(PairId.SuiIka02),
@@ -26,11 +27,11 @@ export class PairSeeder implements Seeder {
                 feeRate: 0.002,
             },
             {
-                _id: createObjectId(PairId.SuiUsdc05),
-                displayId: PairId.SuiUsdc05,
-                tokenA: createObjectId(TokenId.Sui),
-                tokenB: createObjectId(TokenId.Usdc),
-                feeRate: 0.005,
+                _id: createObjectId(PairId.SuiUsdc005),
+                displayId: PairId.SuiUsdc005,
+                tokenA: createObjectId(TokenId.Usdc),
+                tokenB: createObjectId(TokenId.Sui),
+                feeRate: 0.0005,
             },
         ]
         try {

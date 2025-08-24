@@ -3,7 +3,7 @@ import { Pool, Position } from "@cetusprotocol/cetus-sui-clmm-sdk"
 import { ProfilePairSchema } from "@/modules/databases"
 import { MemDbService } from "@/modules/databases"
 
-const TICK_DEVIATION_THRESHOLD = 1/4
+const TICK_DEVIATION_THRESHOLD = 1/2
 
 @Injectable()
 export class TickManagerService {
@@ -23,9 +23,10 @@ export class TickManagerService {
     public tickBounds(pool: Pool) {
         const tickSpacing = this.tickSpacing(pool)
         const currentTick = this.currentTick(pool)
+        const lowerTick = Math.floor((currentTick) / tickSpacing) * tickSpacing
         return [
-            Math.floor(currentTick / tickSpacing) * tickSpacing,
-            Math.ceil(currentTick / tickSpacing) * tickSpacing,
+            lowerTick,
+            lowerTick + tickSpacing
         ]
     }
 
@@ -62,7 +63,7 @@ export class TickManagerService {
         const [positionTickUpper, positionTickLower] = [position.tick_upper_index, position.tick_lower_index]
         const currentTick = this.currentTick(pool)
         // the position still in the range, keep earning fees
-        if (positionTickUpper > currentTick && positionTickLower < currentTick) {
+        if (positionTickUpper >= currentTick && positionTickLower <= currentTick) {
             return {
                 isOutOfRange: false,
                 tickDistance: 0,

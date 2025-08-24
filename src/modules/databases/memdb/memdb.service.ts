@@ -18,10 +18,18 @@ export class MemDbService implements OnModuleInit {
     public pairs: Array<PairSchema> = []
     public profiles: Array<ProfileSchema> = []
     constructor(
-        private readonly retryService: RetryService,
-        @InjectMongoose()
-        private readonly connection: Connection,
-    ) { }
+    private readonly retryService: RetryService,
+    @InjectMongoose()
+    private readonly connection: Connection,
+    ) {}
+
+    public getRestToken(profilePair: ProfilePairSchema): TokenSchema {
+        const pair = profilePair.pair as PairSchema
+        const tokenA = pair.tokenA as TokenSchema
+        return profilePair.priorityToken.id.toString() === tokenA.id.toString()
+            ? (pair.tokenB as TokenSchema)
+            : (pair.tokenA as TokenSchema)
+    }
 
     private async loadAll() {
         await Promise.all([
@@ -29,7 +37,7 @@ export class MemDbService implements OnModuleInit {
                 const tokens = await this.connection
                     .model<TokenSchema>(TokenSchema.name)
                     .find()
-                this.tokens = tokens.map(token => token.toJSON())
+                this.tokens = tokens.map((token) => token.toJSON())
             })(),
             (async () => {
                 const pairs = await this.connection
@@ -37,13 +45,13 @@ export class MemDbService implements OnModuleInit {
                     .find()
                     .populate("tokenA")
                     .populate("tokenB")
-                this.pairs = pairs.map(pair => pair.toJSON())
+                this.pairs = pairs.map((pair) => pair.toJSON())
             })(),
             (async () => {
                 const profiles = await this.connection
                     .model<ProfileSchema>(ProfileSchema.name)
                     .find()
-                this.profiles = profiles.map(profile => profile.toJSON())
+                this.profiles = profiles.map((profile) => profile.toJSON())
             })(),
         ])
     }
@@ -58,38 +66,34 @@ export class MemDbService implements OnModuleInit {
         this.logger.log("Loaded all data from memdb")
     }
 
-    @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_30_SECONDS)
     async handleUpdate() {
         this.logger.verbose("Updating memdb...")
         await this.loadAll()
         this.logger.log("Updated memdb")
     }
 
-    public populateProfilePair(
-        profile: ProfileSchema
-    ) {
-        const clonedProfile = _.cloneDeep(profile)
-        for (const profilePair of clonedProfile.profilePairs) {
-            const pair = this.pairs.find(
-                (pair) => pair.id.toString() === profilePair.pair.toString()
-            )
-            if (!pair) {
-                throw new Error(`Pair not found for ${profilePair.pair}`)
-            }
-            profilePair.pair = pair
-            profilePair.priorityToken = (profilePair.priorityToken.toString() === pair.tokenA.id.toString()) ? pair.tokenA : pair.tokenB
-        }
-        return clonedProfile
-    }
+  public populateProfilePair(profile: ProfileSchema) {
+      const clonedProfile = _.cloneDeep(profile)
+      for (const profilePair of clonedProfile.profilePairs) {
+          const pair = this.pairs.find(
+              (pair) => pair.id.toString() === profilePair.pair.toString(),
+          )
+          if (!pair) {
+              throw new Error(`Pair not found for ${profilePair.pair}`)
+          }
+          profilePair.pair = pair
+          profilePair.priorityToken =
+        profilePair.priorityToken.toString() === pair.tokenA.id.toString()
+            ? pair.tokenA
+            : pair.tokenB
+      }
+      return clonedProfile
+  }
 
-    public priorityAOverB(
-        profilePair: ProfilePairSchema
-    ) {
-        const pair = profilePair.pair as PairSchema
-        const tokenA = pair.tokenA as TokenSchema
-        if (profilePair.priorityToken.id === tokenA.id) {
-            return true
-        }
-        return false
-    }
+  public priorityAOverB(profilePair: ProfilePairSchema) {
+      const pair = profilePair.pair as PairSchema
+      const tokenA = pair.tokenA as TokenSchema
+      return profilePair.priorityToken.id.toString() === tokenA.id.toString()
+  }
 }

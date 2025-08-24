@@ -19,7 +19,7 @@ export class ProfilePairSchema extends AbstractSchema {
       priorityToken: TokenSchema | Types.ObjectId
 
   @Prop({ type: Number, default: 0 })
-      capitalAllocatedPercentage: number
+      capitalAllocatedMax: number
 }
 
 export const ProfilePairSchemaClass =
