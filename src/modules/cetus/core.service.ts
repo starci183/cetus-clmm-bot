@@ -22,7 +22,7 @@ export class CetusCoreService {
         private readonly cetusSwapService: CetusSwapService,
         private readonly retryService: RetryService,
         @InjectCache()
-        private readonly cacheService: Cache,
+        private readonly cacheManager: Cache,
     ) { }
 
     @OnEvent(CetusEvent.PoolsUpdated)
@@ -116,11 +116,10 @@ export class CetusCoreService {
         const { pool, profilePair } = poolWithPosition
         const pair = profilePair.pair as PairSchema
         ////
-        if (isPrimary) {
-            if (await this.cacheService.get(COOLDOWN_CACHE_KEY)) {
-                this.logger.warn(`[${pair.displayId}] Cooldown active, skipping...`)
-                return
-            }
+        const cached = await this.cacheManager.get(COOLDOWN_CACHE_KEY)
+        if (isPrimary && cached) {
+            this.logger.warn(`[${pair.displayId}] Cooldown active, skipping...`)
+            return
         }
         const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
         try {
@@ -137,7 +136,7 @@ export class CetusCoreService {
                     })
                 },
             })
-            if (isPrimary) {
+            if (isPrimary || !cached) {
                 await this.retryService.retry({
                     action: async () => {
                         await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
@@ -149,7 +148,7 @@ export class CetusCoreService {
                 `[${pair.displayId}] Error swapping: ${error.message}`,
             )
         } finally {
-            await this.cacheService.set(COOLDOWN_CACHE_KEY, true, COOLDOWN_TIME)
+            await this.cacheManager.set(COOLDOWN_CACHE_KEY, true, COOLDOWN_TIME)
         }
     }
 }
