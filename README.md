@@ -1,52 +1,52 @@
 # Cetus CLMM Trading Bot 🚀
 
-Một bot tự động quản lý thanh khoản (Automated Liquidity Management Bot) cho Cetus Protocol trên blockchain Sui, sử dụng Concentrated Liquidity Market Maker (CLMM) để tối ưu hóa việc cung cấp thanh khoản và kiếm phí giao dịch.
+An Automated Liquidity Management Bot for Cetus Protocol on Sui blockchain, using Concentrated Liquidity Market Maker (CLMM) to optimize liquidity provision and earn trading fees.
 
-## 🎯 Tổng quan
+## 🎯 Overview
 
-Bot này tự động quản lý các vị thế thanh khoản tập trung (concentrated liquidity positions) trên Cetus DEX, giúp tối đa hóa lợi nhuận từ việc cung cấp thanh khoản thông qua:
+This bot automatically manages concentrated liquidity positions on Cetus DEX, helping maximize profits from liquidity provision through:
 
-- **Quản lý vị thế tự động**: Tự động mở/đóng vị thế khi giá ra khỏi phạm vi
-- **Tối ưu hóa phạm vi thanh khoản**: Điều chỉnh phạm vi tick để tối đa hóa hiệu quả vốn
-- **Swap tự động**: Thực hiện swap khi cần thiết để duy trì tỷ lệ token mong muốn
-- **Bảo vệ slippage**: Kiểm soát độ lệch giá và quản lý rủi ro
-- **Rate limiting**: Giới hạn số lượng giao dịch để tránh spam
+- **Automated Position Management**: Automatically opens/closes positions when price moves out of range
+- **Liquidity Range Optimization**: Adjusts tick ranges to maximize capital efficiency
+- **Automatic Swapping**: Performs swaps when necessary to maintain desired token ratios
+- **Slippage Protection**: Controls price slippage and manages risks
+- **Rate Limiting**: Limits transaction frequency to prevent spam
 
-## 🏗️ Kiến trúc hệ thống
+## 🏗️ System Architecture
 
 ### Core Components
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Pool Manager  │ -> │   Core Service  │ -> │ Action Service  │
-│  (Theo dõi pools)│    │ (Logic chính)   │    │(Thực thi giao dịch)│
+│ (Monitor pools) │    │ (Main logic)    │    │(Execute trades) │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          v                       v                       v
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │ Tick Manager    │    │  Swap Service   │    │Balance Manager  │
-│(Quản lý tick)   │    │  (Giao dịch)    │    │(Quản lý số dư)  │
+│(Manage ticks)   │    │  (Trading)      │    │(Manage balances)│
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
 ### Tech Stack
 
-- **Framework**: NestJS với TypeScript
+- **Framework**: NestJS with TypeScript
 - **Blockchain**: Sui Network
 - **Protocol**: Cetus CLMM SDK & Aggregator SDK
-- **Database**: MongoDB với Mongoose
+- **Database**: MongoDB with Mongoose
 - **Cache**: Redis
 - **Scheduling**: Cron jobs
 - **Container**: Docker & Docker Compose
 
-## 🔧 Cài đặt và Chạy
+## 🔧 Installation and Setup
 
-### Yêu cầu hệ thống
+### System Requirements
 
 - Node.js 18+
 - MongoDB
 - Redis
-- Docker (tùy chọn)
+- Docker (optional)
 
 ### 1. Clone repository
 
@@ -55,15 +55,15 @@ git clone <repository-url>
 cd cetus-clmm-bot
 ```
 
-### 2. Cài đặt dependencies
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Cấu hình môi trường
+### 3. Environment configuration
 
-Tạo file `.env` với các biến môi trường sau:
+Create a `.env` file with the following environment variables:
 
 ```env
 # Sui Wallet Configuration
@@ -89,14 +89,14 @@ MONGODB_DB_NAME=cetus_bot
 PAIRS_JSON_ENCODED_DATA=...
 ```
 
-### 4. Khởi tạo database
+### 4. Initialize database
 
 ```bash
-# Seed database với tokens, pairs, và profiles
+# Seed database with tokens, pairs, and profiles
 npm run start:dev
 ```
 
-### 5. Chạy ứng dụng
+### 5. Run the application
 
 #### Development mode
 ```bash
@@ -109,37 +109,37 @@ npm run build
 npm run start:prod
 ```
 
-#### Sử dụng Docker
+#### Using Docker
 ```bash
 docker-compose up -d
 ```
 
-## 📊 Cách thức hoạt động
+## 📊 How It Works
 
-### 1. Khởi tạo và Theo dõi
+### 1. Initialization and Monitoring
 
-- **Pool Manager** cập nhật trạng thái pools mỗi 5 giây
-- Lấy thông tin pools, positions từ Cetus Protocol
-- Emit events khi có cập nhật để trigger logic xử lý
+- **Pool Manager** updates pool state every 5 seconds
+- Fetches pool and position information from Cetus Protocol
+- Emits events when updates occur to trigger processing logic
 
-### 2. Logic quyết định chính
+### 2. Main Decision Logic
 
-**Core Service** xử lý từng pool position:
+**Core Service** processes each pool position:
 
 ```typescript
-// Nếu chưa có position -> Thêm thanh khoản
+// If no position exists -> Add liquidity
 if (!position) {
     await addLiquidityFixToken(pool, profilePair)
 }
 
-// Nếu position ra khỏi phạm vi
+// If position is out of range
 if (isOutOfRange) {
-    if (cùng hướng với preference) {
-        // Đóng position cũ và mở position mới
+    if (same direction as preference) {
+        // Close old position and open new one
         await closePosition(poolWithPosition)
         await addLiquidityFixToken(pool, profilePair)
     } else {
-        // Cần swap trước khi mở position mới
+        // Need to swap before opening new position
         await closePosition(poolWithPosition)
         await swap({ profilePair, a2b: !priorityAOverB })
         await addLiquidityFixToken(pool, profilePair)
@@ -147,21 +147,21 @@ if (isOutOfRange) {
 }
 ```
 
-### 3. Quản lý Tick thông minh
+### 3. Smart Tick Management
 
-**Tick Manager** tính toán:
-- **Tick bounds**: Phạm vi tick hiện tại dựa trên tick spacing
-- **Deviation threshold**: Ngưỡng cho phép = 1/4 tick spacing
-- **Position placement**: Đặt position ở tick tiếp theo theo hướng ưu tiên
+**Tick Manager** calculates:
+- **Tick bounds**: Current tick range based on tick spacing
+- **Deviation threshold**: Allowed threshold = 1/4 tick spacing
+- **Position placement**: Places position at next tick in preferred direction
 
-### 4. Bảo vệ rủi ro
+### 4. Risk Protection
 
-- **Allocation limits**: Tối đa 1 giao dịch mỗi 15 phút
-- **Balance protection**: Giữ lại 0.5 SUI cho gas fees
-- **Tick validation**: Chỉ add liquidity khi tick distance <= threshold
-- **Retry mechanism**: Tự động retry với exponential backoff
+- **Allocation limits**: Maximum 1 transaction per 15 minutes
+- **Balance protection**: Reserves 0.5 SUI for gas fees
+- **Tick validation**: Only adds liquidity when tick distance <= threshold
+- **Retry mechanism**: Automatic retry with exponential backoff
 
-## 🗃️ Cấu trúc Database
+## 🗃️ Database Structure
 
 ### Collections
 
@@ -170,8 +170,8 @@ if (isOutOfRange) {
 {
   displayId: TokenId,     // SUI, USDC, CETUS...
   name: string,          // "Sui", "USD Coin"...
-  address: string,       // Sui address của token
-  decimals: number       // Số decimal places
+  address: string,       // Sui address of the token
+  decimals: number       // Number of decimal places
 }
 ```
 
@@ -179,8 +179,8 @@ if (isOutOfRange) {
 ```typescript
 {
   displayId: PairId,     // SUI_USDC, CETUS_SUI...
-  tokenA: TokenSchema,   // Reference tới token A
-  tokenB: TokenSchema,   // Reference tới token B
+  tokenA: TokenSchema,   // Reference to token A
+  tokenB: TokenSchema,   // Reference to token B
   feeRate: number        // Fee rate (0.0025 = 0.25%)
 }
 ```
@@ -191,8 +191,8 @@ if (isOutOfRange) {
   name: string,
   description: string,
   profilePairs: [{
-    pair: PairSchema,           // Reference tới pair
-    priorityToken: TokenSchema, // Token ưu tiên giữ
+    pair: PairSchema,           // Reference to pair
+    priorityToken: TokenSchema, // Preferred token to hold
     capitalAllocatedPercentage: number
   }]
 }
@@ -209,29 +209,29 @@ if (isOutOfRange) {
 }
 ```
 
-## 🔐 Bảo mật
+## 🔐 Security
 
 ### Private Key Management
-- Private key được mã hóa AES với IV và key riêng biệt
-- Không lưu trữ private key dạng plain text
-- Sử dụng environment variables cho sensitive data
+- Private key is encrypted using AES with separate IV and key
+- Never stores private key in plain text
+- Uses environment variables for sensitive data
 
 ### Transaction Safety
-- Validation đầy đủ trước khi thực hiện giao dịch
-- Slippage protection cho tất cả operations
-- Minimum balance protection cho gas fees
+- Full validation before executing transactions
+- Slippage protection for all operations
+- Minimum balance protection for gas fees
 
-## 📈 Monitoring và Logging
+## 📈 Monitoring and Logging
 
 ### Log Levels
-- **Fatal**: Thông tin quan trọng (current tick, distances)
-- **Error**: Lỗi nghiêm trọng cần xử lý
-- **Warn**: Cảnh báo (allocation exceeded, cannot move position)
-- **Log**: Thông tin giao dịch thành công
-- **Verbose**: Chi tiết logic decision
-- **Debug**: Thông tin debug chi tiết
+- **Fatal**: Critical information (current tick, distances)
+- **Error**: Serious errors requiring attention
+- **Warn**: Warnings (allocation exceeded, cannot move position)
+- **Log**: Successful transaction information
+- **Verbose**: Detailed decision logic
+- **Debug**: Detailed debugging information
 
-### Key Metrics được log
+### Key Metrics Logged
 - Current tick position
 - Distance from tick bounds
 - Position range status
@@ -262,15 +262,15 @@ npm run test:watch
 1. ✅ Set up MongoDB cluster
 2. ✅ Configure Redis instance  
 3. ✅ Set all environment variables
-4. ✅ Fund wallet với sufficient SUI for gas
+4. ✅ Fund wallet with sufficient SUI for gas
 5. ✅ Configure pairs data properly
 6. ✅ Set up monitoring/alerting
-7. ✅ Test với small amounts first
+7. ✅ Test with small amounts first
 
 ### Docker Deployment
 
 ```bash
-# Build và start
+# Build and start
 docker-compose up -d
 
 # View logs
@@ -313,11 +313,11 @@ src/
 
 ### Custom Logic
 
-Bot có thể được extend với:
+The bot can be extended with:
 - Custom tick strategies
 - Multiple position management
 - Advanced risk management
-- Integration với other DEXs
+- Integration with other DEXs
 - Arbitrage opportunities
 
 ## 📚 API Documentation
