@@ -324,8 +324,8 @@ The bot can be extended with:
 
 ### Core Events
 
-- `CetusEvent.PoolsUpdated`: Triggered khi pools được update
-- Chứa mapping của `profilePairId -> PoolWithPosition`
+- `CetusEvent.PoolsUpdated`: Triggered when pools are updated
+- Contains mapping of `profilePairId -> PoolWithPosition`
 
 ### Key Interfaces
 
@@ -366,9 +366,9 @@ This project is licensed under UNLICENSED - see the package.json for details.
 
 ## ⚠️ Disclaimer
 
-Bot này được phát triển cho mục đích educational và experimental. Cryptocurrency trading involves substantial risk. Sử dụng bot này hoàn toàn tự chịu trách nhiệm. Developers không chịu trách nhiệm cho bất kỳ tổn thất nào có thể xảy ra.
+This bot is developed for educational and experimental purposes. Cryptocurrency trading involves substantial risk. Use this bot entirely at your own risk. Developers are not responsible for any losses that may occur.
 
-## 🔗 Links hữu ích
+## 🔗 Useful Links
 
 - [Cetus Protocol](https://cetus.zone/)
 - [Sui Network](https://sui.io/)
