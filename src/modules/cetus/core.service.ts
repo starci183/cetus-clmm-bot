@@ -52,15 +52,22 @@ export class CetusCoreService {
             )
 
             /// No position -> try add liquidity
+            const cached = await this.cacheManager.get(COOLDOWN_CACHE_KEY)
             if (!position) {
                 await this.retryService.retry({
                     action: async () => {
-                        const cached = await this.cacheManager.get(COOLDOWN_CACHE_KEY)
                         if (cached) {
                             this.logger.warn(`[${pair.displayId}] Cooldown active, skipping...`)
                             return
                         }
-                        await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
+                        try {
+                            await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
+                        } catch (error) {
+                            this.logger.error(`[${pair.displayId}] Error adding liquidity: ${error.message}`)
+                        }
+                        finally {
+                            await this.cacheManager.set(COOLDOWN_CACHE_KEY, true, COOLDOWN_TIME)
+                        }
                     },
                 })
                 continue
@@ -109,23 +116,23 @@ export class CetusCoreService {
                     )
                     continue
                 }
-                await this.processTransactions(poolWithPosition, false)
+                await this.processTransactions(poolWithPosition)
             }
         }
     }
 
     private async processTransactions(
-        poolWithPosition: PoolWithPosition, 
-        isPrimary: boolean = true
+        poolWithPosition: PoolWithPosition
     ) {
         const { pool, profilePair } = poolWithPosition
         const pair = profilePair.pair as PairSchema
-        ////
+
         const cached = await this.cacheManager.get(COOLDOWN_CACHE_KEY)
-        if (isPrimary && cached) {
+        if (cached) {
             this.logger.warn(`[${pair.displayId}] Cooldown active, skipping...`)
             return
         }
+        
         const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
         try {
             await this.retryService.retry({
@@ -141,13 +148,11 @@ export class CetusCoreService {
                     })
                 },
             })
-            if (isPrimary || !cached) {
-                await this.retryService.retry({
-                    action: async () => {
-                        await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
-                    },
-                })
-            }
+            await this.retryService.retry({
+                action: async () => {
+                    await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
+                },
+            })
         } catch (error) {
             this.logger.error(
                 `[${pair.displayId}] Error swapping: ${error.message}`,
