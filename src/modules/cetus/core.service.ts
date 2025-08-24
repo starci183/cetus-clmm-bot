@@ -55,6 +55,11 @@ export class CetusCoreService {
             if (!position) {
                 await this.retryService.retry({
                     action: async () => {
+                        const cached = await this.cacheManager.get(COOLDOWN_CACHE_KEY)
+                        if (cached) {
+                            this.logger.warn(`[${pair.displayId}] Cooldown active, skipping...`)
+                            return
+                        }
                         await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
                     },
                 })
