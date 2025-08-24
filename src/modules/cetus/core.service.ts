@@ -50,11 +50,6 @@ export class CetusCoreService {
             this.logger.fatal(
                 `[${pair.displayId}] Distance from bounds: Left: ${Math.abs(tickLower - pool.current_tick_index)}, Right: ${Math.abs(pool.current_tick_index - tickUpper)}`,
             )
-            ////
-            if (await this.cacheService.get(COOLDOWN_CACHE_KEY)) {
-                this.logger.warn(`[${pair.displayId}] Cooldown active, skipping...`)
-                continue
-            }
 
             /// No position -> try add liquidity
             if (!position) {
@@ -117,7 +112,11 @@ export class CetusCoreService {
     private async processTransactions(poolWithPosition: PoolWithPosition) {
         const { pool, profilePair } = poolWithPosition
         const pair = profilePair.pair as PairSchema
-
+        ////
+        if (await this.cacheService.get(COOLDOWN_CACHE_KEY)) {
+            this.logger.warn(`[${pair.displayId}] Cooldown active, skipping...`)
+            return
+        }
         const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
         try {
             await this.retryService.retry({
