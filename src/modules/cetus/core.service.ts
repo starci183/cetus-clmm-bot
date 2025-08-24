@@ -104,18 +104,23 @@ export class CetusCoreService {
                     )
                     continue
                 }
-                await this.processTransactions(poolWithPosition)
+                await this.processTransactions(poolWithPosition, false)
             }
         }
     }
 
-    private async processTransactions(poolWithPosition: PoolWithPosition) {
+    private async processTransactions(
+        poolWithPosition: PoolWithPosition, 
+        isPrimary: boolean = true
+    ) {
         const { pool, profilePair } = poolWithPosition
         const pair = profilePair.pair as PairSchema
         ////
-        if (await this.cacheService.get(COOLDOWN_CACHE_KEY)) {
-            this.logger.warn(`[${pair.displayId}] Cooldown active, skipping...`)
-            return
+        if (isPrimary) {
+            if (await this.cacheService.get(COOLDOWN_CACHE_KEY)) {
+                this.logger.warn(`[${pair.displayId}] Cooldown active, skipping...`)
+                return
+            }
         }
         const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
         try {
@@ -132,11 +137,13 @@ export class CetusCoreService {
                     })
                 },
             })
-            await this.retryService.retry({
-                action: async () => {
-                    await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
-                },
-            })
+            if (isPrimary) {
+                await this.retryService.retry({
+                    action: async () => {
+                        await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
+                    },
+                })
+            }
         } catch (error) {
             this.logger.error(
                 `[${pair.displayId}] Error swapping: ${error.message}`,
