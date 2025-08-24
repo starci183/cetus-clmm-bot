@@ -1,98 +1,380 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Cetus CLMM Trading Bot 🚀
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Một bot tự động quản lý thanh khoản (Automated Liquidity Management Bot) cho Cetus Protocol trên blockchain Sui, sử dụng Concentrated Liquidity Market Maker (CLMM) để tối ưu hóa việc cung cấp thanh khoản và kiếm phí giao dịch.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🎯 Tổng quan
 
-## Description
+Bot này tự động quản lý các vị thế thanh khoản tập trung (concentrated liquidity positions) trên Cetus DEX, giúp tối đa hóa lợi nhuận từ việc cung cấp thanh khoản thông qua:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Quản lý vị thế tự động**: Tự động mở/đóng vị thế khi giá ra khỏi phạm vi
+- **Tối ưu hóa phạm vi thanh khoản**: Điều chỉnh phạm vi tick để tối đa hóa hiệu quả vốn
+- **Swap tự động**: Thực hiện swap khi cần thiết để duy trì tỷ lệ token mong muốn
+- **Bảo vệ slippage**: Kiểm soát độ lệch giá và quản lý rủi ro
+- **Rate limiting**: Giới hạn số lượng giao dịch để tránh spam
 
-## Project setup
+## 🏗️ Kiến trúc hệ thống
 
-```bash
-$ npm install
+### Core Components
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Pool Manager  │ -> │   Core Service  │ -> │ Action Service  │
+│  (Theo dõi pools)│    │ (Logic chính)   │    │(Thực thi giao dịch)│
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         v                       v                       v
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Tick Manager    │    │  Swap Service   │    │Balance Manager  │
+│(Quản lý tick)   │    │  (Giao dịch)    │    │(Quản lý số dư)  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-## Compile and run the project
+### Tech Stack
+
+- **Framework**: NestJS với TypeScript
+- **Blockchain**: Sui Network
+- **Protocol**: Cetus CLMM SDK & Aggregator SDK
+- **Database**: MongoDB với Mongoose
+- **Cache**: Redis
+- **Scheduling**: Cron jobs
+- **Container**: Docker & Docker Compose
+
+## 🔧 Cài đặt và Chạy
+
+### Yêu cầu hệ thống
+
+- Node.js 18+
+- MongoDB
+- Redis
+- Docker (tùy chọn)
+
+### 1. Clone repository
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+git clone <repository-url>
+cd cetus-clmm-bot
 ```
 
-## Run tests
+### 2. Cài đặt dependencies
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install
 ```
 
-## Deployment
+### 3. Cấu hình môi trường
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Tạo file `.env` với các biến môi trường sau:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+```env
+# Sui Wallet Configuration
+SUI_WALLET_ADDRESS=0x...
+SUI_PRIVATE_KEY_CIPHER_TEXT=...
+SUI_PRIVATE_KEY_IV=...
+SUI_PRIVATE_KEY_KEY=...
+
+# Redis Configuration
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_TTL=60000
+
+# MongoDB Configuration
+MONGODB_HOST=localhost
+MONGODB_PORT=27017
+MONGODB_USERNAME=
+MONGODB_PASSWORD=
+MONGODB_DB_NAME=cetus_bot
+
+# Pairs Configuration (JSON encoded)
+PAIRS_JSON_ENCODED_DATA=...
+```
+
+### 4. Khởi tạo database
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Seed database với tokens, pairs, và profiles
+npm run start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 5. Chạy ứng dụng
 
-## Resources
+#### Development mode
+```bash
+npm run start:dev
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+#### Production mode
+```bash
+npm run build
+npm run start:prod
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+#### Sử dụng Docker
+```bash
+docker-compose up -d
+```
 
-## Support
+## 📊 Cách thức hoạt động
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### 1. Khởi tạo và Theo dõi
 
-## Stay in touch
+- **Pool Manager** cập nhật trạng thái pools mỗi 5 giây
+- Lấy thông tin pools, positions từ Cetus Protocol
+- Emit events khi có cập nhật để trigger logic xử lý
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### 2. Logic quyết định chính
 
-## License
+**Core Service** xử lý từng pool position:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```typescript
+// Nếu chưa có position -> Thêm thanh khoản
+if (!position) {
+    await addLiquidityFixToken(pool, profilePair)
+}
+
+// Nếu position ra khỏi phạm vi
+if (isOutOfRange) {
+    if (cùng hướng với preference) {
+        // Đóng position cũ và mở position mới
+        await closePosition(poolWithPosition)
+        await addLiquidityFixToken(pool, profilePair)
+    } else {
+        // Cần swap trước khi mở position mới
+        await closePosition(poolWithPosition)
+        await swap({ profilePair, a2b: !priorityAOverB })
+        await addLiquidityFixToken(pool, profilePair)
+    }
+}
+```
+
+### 3. Quản lý Tick thông minh
+
+**Tick Manager** tính toán:
+- **Tick bounds**: Phạm vi tick hiện tại dựa trên tick spacing
+- **Deviation threshold**: Ngưỡng cho phép = 1/4 tick spacing
+- **Position placement**: Đặt position ở tick tiếp theo theo hướng ưu tiên
+
+### 4. Bảo vệ rủi ro
+
+- **Allocation limits**: Tối đa 1 giao dịch mỗi 15 phút
+- **Balance protection**: Giữ lại 0.5 SUI cho gas fees
+- **Tick validation**: Chỉ add liquidity khi tick distance <= threshold
+- **Retry mechanism**: Tự động retry với exponential backoff
+
+## 🗃️ Cấu trúc Database
+
+### Collections
+
+#### 1. Tokens
+```typescript
+{
+  displayId: TokenId,     // SUI, USDC, CETUS...
+  name: string,          // "Sui", "USD Coin"...
+  address: string,       // Sui address của token
+  decimals: number       // Số decimal places
+}
+```
+
+#### 2. Pairs 
+```typescript
+{
+  displayId: PairId,     // SUI_USDC, CETUS_SUI...
+  tokenA: TokenSchema,   // Reference tới token A
+  tokenB: TokenSchema,   // Reference tới token B
+  feeRate: number        // Fee rate (0.0025 = 0.25%)
+}
+```
+
+#### 3. Profiles
+```typescript
+{
+  name: string,
+  description: string,
+  profilePairs: [{
+    pair: PairSchema,           // Reference tới pair
+    priorityToken: TokenSchema, // Token ưu tiên giữ
+    capitalAllocatedPercentage: number
+  }]
+}
+```
+
+#### 4. Liquidity Ranges (Tracking)
+```typescript
+{
+  profilePair: ObjectId,
+  tickIndexBoundLower: number,
+  tickIndexBoundUpper: number, 
+  currentTickAtCreation: number,
+  originalCapital: number
+}
+```
+
+## 🔐 Bảo mật
+
+### Private Key Management
+- Private key được mã hóa AES với IV và key riêng biệt
+- Không lưu trữ private key dạng plain text
+- Sử dụng environment variables cho sensitive data
+
+### Transaction Safety
+- Validation đầy đủ trước khi thực hiện giao dịch
+- Slippage protection cho tất cả operations
+- Minimum balance protection cho gas fees
+
+## 📈 Monitoring và Logging
+
+### Log Levels
+- **Fatal**: Thông tin quan trọng (current tick, distances)
+- **Error**: Lỗi nghiêm trọng cần xử lý
+- **Warn**: Cảnh báo (allocation exceeded, cannot move position)
+- **Log**: Thông tin giao dịch thành công
+- **Verbose**: Chi tiết logic decision
+- **Debug**: Thông tin debug chi tiết
+
+### Key Metrics được log
+- Current tick position
+- Distance from tick bounds
+- Position range status
+- Transaction digests
+- Balance changes
+- Allocation usage
+
+## 🧪 Testing
+
+```bash
+# Unit tests
+npm run test
+
+# E2E tests  
+npm run test:e2e
+
+# Test coverage
+npm run test:cov
+
+# Watch mode
+npm run test:watch
+```
+
+## 🚀 Deployment
+
+### Production Checklist
+
+1. ✅ Set up MongoDB cluster
+2. ✅ Configure Redis instance  
+3. ✅ Set all environment variables
+4. ✅ Fund wallet với sufficient SUI for gas
+5. ✅ Configure pairs data properly
+6. ✅ Set up monitoring/alerting
+7. ✅ Test với small amounts first
+
+### Docker Deployment
+
+```bash
+# Build và start
+docker-compose up -d
+
+# View logs
+docker-compose logs -f server
+
+# Stop
+docker-compose down
+```
+
+## 🛠️ Development
+
+### Code Structure
+
+```
+src/
+├── modules/
+│   ├── cetus/           # Core Cetus integration
+│   │   ├── core.service.ts         # Main business logic
+│   │   ├── action.service.ts       # Position management
+│   │   ├── swap.service.ts         # Token swapping
+│   │   ├── pool-manager.service.ts # Pool state tracking
+│   │   ├── tick-manager.service.ts # Tick calculations
+│   │   └── balance-manager.service.ts # Balance management
+│   ├── databases/       # Database integrations
+│   │   ├── mongodb/     # MongoDB schemas & utils
+│   │   ├── memdb/       # In-memory data caching
+│   │   └── seeders/     # Database seeding
+│   ├── cache/           # Redis caching
+│   ├── mixin/           # Retry mechanisms
+│   ├── number/          # Amount calculations
+│   └── env/             # Environment configuration
+```
+
+### Adding New Pairs
+
+1. Add token definitions in seeders
+2. Create pair configuration
+3. Add to profile configuration
+4. Update PAIRS_JSON_ENCODED_DATA environment variable
+
+### Custom Logic
+
+Bot có thể được extend với:
+- Custom tick strategies
+- Multiple position management
+- Advanced risk management
+- Integration với other DEXs
+- Arbitrage opportunities
+
+## 📚 API Documentation
+
+### Core Events
+
+- `CetusEvent.PoolsUpdated`: Triggered khi pools được update
+- Chứa mapping của `profilePairId -> PoolWithPosition`
+
+### Key Interfaces
+
+```typescript
+interface PoolWithPosition {
+  pool: Pool              // Cetus pool data
+  position?: Position     // Current position (if any) 
+  profilePair: ProfilePairSchema // Configuration
+}
+
+interface SwapParams {
+  profilePair: ProfilePairSchema
+  amount?: number         // Auto-calculate if not provided
+  a2b: boolean           // Swap direction
+  slippage?: number      // Default 0.5%
+}
+```
+
+## 🤝 Contributing
+
+1. Fork repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+### Development Guidelines
+
+- Follow TypeScript best practices
+- Add comprehensive tests for new features
+- Update documentation for API changes
+- Use conventional commit messages
+- Ensure all tests pass before submitting PR
+
+## 📝 License
+
+This project is licensed under UNLICENSED - see the package.json for details.
+
+## ⚠️ Disclaimer
+
+Bot này được phát triển cho mục đích educational và experimental. Cryptocurrency trading involves substantial risk. Sử dụng bot này hoàn toàn tự chịu trách nhiệm. Developers không chịu trách nhiệm cho bất kỳ tổn thất nào có thể xảy ra.
+
+## 🔗 Links hữu ích
+
+- [Cetus Protocol](https://cetus.zone/)
+- [Sui Network](https://sui.io/)
+- [NestJS Documentation](https://docs.nestjs.com/)
+- [Cetus SDK Documentation](https://github.com/CetusProtocol/cetus-clmm-sui-sdk)
+
+---
+
+**Built with ❤️ for the Sui ecosystem**
