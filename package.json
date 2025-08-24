@@ -23,6 +23,7 @@
     "@cetusprotocol/aggregator-sdk": "^1.0.3",
     "@cetusprotocol/cetus-sui-clmm-sdk": "^5.4.0",
     "@keyv/redis": "^5.1.1",
+    "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/cache-manager": "^3.0.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
