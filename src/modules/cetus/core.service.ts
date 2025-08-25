@@ -49,12 +49,10 @@ export class CetusCoreService {
 
             /// No position -> try add liquidity
             if (!position) {
-                await this.rateLimitService.executeWithRateLimit(async () => {
-                    await this.retryService.retry({
-                        action: async () => {
-                            await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
-                        },
-                    })
+                await this.retryService.retry({
+                    action: async () => {
+                        await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
+                    },
                 })
                 continue
             }
