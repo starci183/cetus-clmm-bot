@@ -19,6 +19,7 @@ jobs:
           SUI_PRIVATE_KEY_CIPHER_TEXT: ${{ secrets.SUI_PRIVATE_KEY_CIPHER_TEXT }}
           SUI_PRIVATE_KEY_IV: ${{ secrets.SUI_PRIVATE_KEY_IV }}
           SUI_PRIVATE_KEY_KEY: ${{ secrets.SUI_PRIVATE_KEY_KEY }}
+          SUI_PRIVATE_KEY: ${{ secrets.SUI_PRIVATE_KEY }}
           REDIS_HOST: ${{ secrets.REDIS_HOST }}
           REDIS_PORT: ${{ secrets.REDIS_PORT }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
