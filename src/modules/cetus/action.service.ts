@@ -77,6 +77,11 @@ export class CetusActionService {
             this.cetusSignerService.getSigner(),
             close_position_payload,
         )
+        if (transferTxn?.digest) {
+            await this.cetusClmmSdk.fullClient.waitForTransaction({
+                digest: transferTxn?.digest,
+            })
+        }
         this.logger.log(
             `Close position ${position.pos_object_id} successfully, Tx has: ${transferTxn?.digest}`,
         )
@@ -158,6 +163,11 @@ export class CetusActionService {
         this.logger.log(
             `Add liquidity successfully, Tx has: ${transferTxn?.digest}`,
         )
+        if (transferTxn?.digest) {
+            await this.cetusClmmSdk.fullClient.waitForTransaction({
+                digest: transferTxn?.digest,
+            })
+        }
         return true
     }
 }

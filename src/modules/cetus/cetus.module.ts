@@ -26,10 +26,10 @@ import { CetusCoreService } from "./core.service"
         TickManagerService,
         BalanceManagerService,
         CetusActionService,
-        CetusCoreService
+        CetusCoreService,
         //MixinService,
         //CetusSwapService,
-        //AllocationManagerService,
+        //Allo  cationManagerService,
         // PositionManagerService,
         //TickManagerService,
         //BalanceManagerService

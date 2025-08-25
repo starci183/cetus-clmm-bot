@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common"
+import { Inject, Injectable, Logger } from "@nestjs/common"
 import BN from "bn.js"
 import { CETUS } from "./constants"
 import { CetusClmmSDK } from "@cetusprotocol/cetus-sui-clmm-sdk"
@@ -8,6 +8,7 @@ import { AmountHelpersService } from "../number"
 
 @Injectable()
 export class BalanceManagerService {
+    private readonly logger = new Logger(BalanceManagerService.name)
     constructor(
     @Inject(CETUS)
     private readonly cetusClmmSdk: CetusClmmSDK,
@@ -49,6 +50,7 @@ export class BalanceManagerService {
         const token = this.memdbService.tokens.find(
             (token) => token.displayId === tokenId,
         )
+        console.log(capitalAllocatedMax)
         if (!token) {
             throw new Error(`Token ${tokenId} not found`)
         }
@@ -56,16 +58,17 @@ export class BalanceManagerService {
             coinType: token.address,
             owner: envConfig().sui.walletAddress,
         })
+        this.logger.warn(`Total balance: ${totalBalance}`)
         let maxAmount = new BN(totalBalance)
         if (tokenId === TokenId.Sui) {
             maxAmount = maxAmount.sub(this.getMinSuiBalance())
         }
-        const _capitalAllocatedMax = new BN(capitalAllocatedMax).mul(
-            new BN(10).pow(new BN(token.decimals)),
-        )
-        maxAmount = maxAmount.gt(_capitalAllocatedMax)
-            ? _capitalAllocatedMax
-            : maxAmount
+        // const _capitalAllocatedMax = new BN(capitalAllocatedMax).mul(
+        //     new BN(10).pow(new BN(token.decimals)),
+        // )
+        // maxAmount = maxAmount.gt(_capitalAllocatedMax)
+        //     ? _capitalAllocatedMax
+        //     : maxAmount
         return {
             maxAmount,
             isAvailable: maxAmount.gt(new BN(0)),

@@ -6,6 +6,7 @@ export const envConfig = () => ({
     sui: {
         walletAddress: process.env.SUI_WALLET_ADDRESS || "",
         privateKey: {
+            base: process.env.SUI_PRIVATE_KEY || "",
             iv: process.env.SUI_PRIVATE_KEY_IV || "",
             key: process.env.SUI_PRIVATE_KEY_KEY || "",
             cipherText: process.env.SUI_PRIVATE_KEY_CIPHER_TEXT || "",

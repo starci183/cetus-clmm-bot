@@ -70,6 +70,7 @@ export class CetusSwapService {
         )
             rawAmount = maxAmount
         }
+        this.logger.warn(`Amount to swap: ${rawAmount.toString()}`)
         if (rawAmount.lt(this.getMinAmountToSwap(fromToken.displayId))) {
             this.logger.warn(
                 `Not enough balance to swap ${rawAmount.toString()} ${fromToken.displayId}`,
@@ -105,6 +106,11 @@ export class CetusSwapService {
             transaction: txb,
             signer: this.cetusSignerService.getSigner(),
         })
+        if (signedTx?.digest) {
+            await this.suiClient.waitForTransaction({
+                digest: signedTx?.digest,
+            })
+        }
         this.logger.log(`Transaction digest: ${signedTx.digest}`)
     }
 }
