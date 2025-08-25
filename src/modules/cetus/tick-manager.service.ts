@@ -3,7 +3,7 @@ import { Pool, Position } from "@cetusprotocol/cetus-sui-clmm-sdk"
 import { ProfilePairSchema } from "@/modules/databases"
 import { MemDbService } from "@/modules/databases"
 
-const TICK_DEVIATION_THRESHOLD = 1/2
+const TICK_DEVIATION_THRESHOLD = 1/4
 
 @Injectable()
 export class TickManagerService {
