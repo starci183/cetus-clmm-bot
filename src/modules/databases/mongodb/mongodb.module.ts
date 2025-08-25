@@ -28,7 +28,6 @@ export class MongooseModule extends ConfigurableModuleClass {
         const { dbName, host, password, port, username } =
       envConfig().databases.mongodb
         const url = `mongodb://${username}:${password}@${host}:${port}`
-        this.logger.debug(`MongoDB URL: ${url}`)
         return {
             ...dynamicModule,
             imports: [

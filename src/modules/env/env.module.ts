@@ -13,7 +13,7 @@ export class EnvModule extends ConfigurableModuleClass {
             ...dynamicModule,
             imports: [
                 ConfigModule.forRoot({
-                    isGlobal: true,
+                    isGlobal: false,
                     load: [envConfig],
                     envFilePath: [".env.local", ".env.secret"]
                 })
