@@ -7,7 +7,6 @@ import { MemDbService, PairSchema, TokenSchema } from "../databases"
 import { TickManagerService } from "./tick-manager.service"
 import { CetusSwapService } from "./swap.service"
 import { RetryService } from "@/modules/mixin"
-import { CetusRateLimitService } from "./rate-limit.service"
 
 @Injectable()
 export class CetusCoreService {
@@ -18,7 +17,6 @@ export class CetusCoreService {
         private readonly tickManagerService: TickManagerService,
         private readonly cetusSwapService: CetusSwapService,
         private readonly retryService: RetryService,
-        private readonly rateLimitService: CetusRateLimitService,
     ) { }
 
     @OnEvent(CetusEvent.PoolsUpdated)
@@ -113,30 +111,28 @@ export class CetusCoreService {
 
         const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
         try {
-            await this.rateLimitService.executeWithRateLimit(async () => {
-                // 1️⃣ Close position
-                await this.retryService.retry({
-                    action: async () => {
-                        await this.cetusActionService.closePosition(poolWithPosition)
-                    }
-                })
+            // 1️⃣ Close position
+            await this.retryService.retry({
+                action: async () => {
+                    await this.cetusActionService.closePosition(poolWithPosition)
+                }
+            })
             
-                // 2️⃣ Swap token
-                await this.retryService.retry({
-                    action: async () => {
-                        await this.cetusSwapService.swap({
-                            profilePair,
-                            a2b: !priorityAOverB,
-                        })
-                    }
-                })
+            // 2️⃣ Swap token
+            await this.retryService.retry({
+                action: async () => {
+                    await this.cetusSwapService.swap({
+                        profilePair,
+                        a2b: !priorityAOverB,
+                    })
+                }
+            })
             
-                // 3️⃣ Add liquidity
-                await this.retryService.retry({
-                    action: async () => {
-                        await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
-                    }
-                })
+            // 3️⃣ Add liquidity
+            await this.retryService.retry({
+                action: async () => {
+                    await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
+                }
             })
         } catch (error) {
             this.logger.error(
