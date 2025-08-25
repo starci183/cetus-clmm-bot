@@ -24,7 +24,7 @@ export class CetusRateLimitService {
     constructor() {}
 
     async executeWithRateLimit(action: () => Promise<void>) {
-        // kiểm tra trước
+        // We try to get points
         const per8HoursPoints = await this.per8HoursLimiter.get("per8Hours")
         const per5MinsPoints = await this.per5MinsLimiter.get("per5Mins")
     
@@ -39,7 +39,7 @@ export class CetusRateLimitService {
             throw new Error("Rate limit exceeded")
         }
     
-        // cả 2 còn point → trừ luôn
+        // We consume points
         await this.per8HoursLimiter.consume("per8Hours")
         await this.per5MinsLimiter.consume("per5Mins")
     
