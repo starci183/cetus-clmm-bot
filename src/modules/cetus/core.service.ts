@@ -7,11 +7,11 @@ import { MemDbService, PairSchema, TokenSchema } from "../databases"
 import { TickManagerService } from "./tick-manager.service"
 import { CetusSwapService } from "./swap.service"
 import { RetryService } from "@/modules/mixin"
-import { Cron, CronExpression } from "@nestjs/schedule"
+import { Interval } from "@nestjs/schedule"
 
 @Injectable()
 export class CetusCoreService {
-    private maxTxPer5Mins = 10
+    private maxTxPer8Hours = 100
     private txCount = 0
     private readonly logger = new Logger(CetusCoreService.name)
     constructor(
@@ -22,14 +22,14 @@ export class CetusCoreService {
         private readonly retryService: RetryService,
     ) { }
 
-    @Cron(CronExpression.EVERY_5_MINUTES)
+    @Interval(1000 * 60 * 60 * 8)
     async resetTxCount() {
         this.txCount = 0
     }
 
     private async tryWithTxLimit(action: () => Promise<void>) {
-        if (this.txCount >= this.maxTxPer5Mins) {
-            this.logger.error("Max tx per 5 mins reached, skipping...")
+        if (this.txCount >= this.maxTxPer8Hours) {
+            this.logger.error("Max tx per 8 hours reached, skipping...")
             return
         }
         await this.retryService.retry({
