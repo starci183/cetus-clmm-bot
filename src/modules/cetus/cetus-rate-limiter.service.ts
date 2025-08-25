@@ -12,10 +12,10 @@ export class CetusTxRateLimiterService {
     })
     constructor() {}
 
-    @Interval(1000)
+    @Interval(10000)
     async logTxCount() {
         const result = await this.limter.get(TX_COUNT_KEY)
-        this.logger.warn(`Tx count: ${result?.consumedPoints}`)
+        this.logger.warn(`Tx count: ${result?.consumedPoints || 0}`)
     }
 
     public async increaseTxCount() {
