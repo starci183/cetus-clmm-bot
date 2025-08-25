@@ -7,9 +7,12 @@ import { MemDbService, PairSchema, TokenSchema } from "../databases"
 import { TickManagerService } from "./tick-manager.service"
 import { CetusSwapService } from "./swap.service"
 import { RetryService } from "@/modules/mixin"
+import { Cron, CronExpression } from "@nestjs/schedule"
 
 @Injectable()
 export class CetusCoreService {
+    private maxTxPer5Mins = 10
+    private txCount = 0
     private readonly logger = new Logger(CetusCoreService.name)
     constructor(
         private readonly cetusActionService: CetusActionService,
@@ -18,6 +21,24 @@ export class CetusCoreService {
         private readonly cetusSwapService: CetusSwapService,
         private readonly retryService: RetryService,
     ) { }
+
+    @Cron(CronExpression.EVERY_5_MINUTES)
+    async resetTxCount() {
+        this.txCount = 0
+    }
+
+    private async tryWithTxLimit(action: () => Promise<void>) {
+        if (this.txCount >= this.maxTxPer5Mins) {
+            this.logger.error("Max tx per 5 mins reached, skipping...")
+            return
+        }
+        await this.retryService.retry({
+            action: async () => {
+                await action()
+            },
+        })
+        this.txCount++
+    }
 
     @OnEvent(CetusEvent.PoolsUpdated)
     async handlePoolsUpdated(data: Partial<Record<string, PoolWithPosition>>) {
@@ -47,14 +68,8 @@ export class CetusCoreService {
 
             /// No position -> try add liquidity
             if (!position) {
-                await this.retryService.retry({
-                    action: async () => {
-                        try {
-                            await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
-                        } catch (error) {
-                            this.logger.error(`[${pair.displayId}] Error adding liquidity: ${error.message}`)
-                        }         
-                    },
+                await this.tryWithTxLimit(async () => {
+                    await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
                 })
                 continue
             }
@@ -115,23 +130,17 @@ export class CetusCoreService {
 
         const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
         try {
-            await this.retryService.retry({
-                action: async () => {
-                    await this.cetusActionService.closePosition(poolWithPosition)
-                },
+            await this.tryWithTxLimit(async () => {
+                await this.cetusActionService.closePosition(poolWithPosition)
             })
-            await this.retryService.retry({
-                action: async () => {
-                    await this.cetusSwapService.swap({
-                        profilePair,
-                        a2b: !priorityAOverB,
-                    })
-                },
+            await this.tryWithTxLimit(async () => {
+                await this.cetusSwapService.swap({
+                    profilePair,
+                    a2b: !priorityAOverB,
+                })
             })
-            await this.retryService.retry({
-                action: async () => {
-                    await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
-                },
+            await this.tryWithTxLimit(async () => {
+                await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
             })
         } catch (error) {
             this.logger.error(
