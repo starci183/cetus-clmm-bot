@@ -12,6 +12,7 @@ import { TickManagerService } from "./tick-manager.service"
 import { BalanceManagerService } from "./balance-manager.service"
 import { CetusActionService } from "./action.service"
 import { CetusCoreService } from "./core.service"
+import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
 // import { BalanceManagerService } from "./balance-manager.service"
 // import { CetusSwapService } from "./cetus-swap.service"
 @Module({
@@ -27,6 +28,7 @@ import { CetusCoreService } from "./core.service"
         BalanceManagerService,
         CetusActionService,
         CetusCoreService,
+        CetusTxRateLimiterService,
         //MixinService,
         //CetusSwapService,
         //Allo  cationManagerService,

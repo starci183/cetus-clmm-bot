@@ -15,6 +15,7 @@ import { CetusSignerService } from "./cetus-signer.service"
 import { SuiClient } from "@mysten/sui/client"
 import { BalanceManagerService } from "./balance-manager.service"
 import BN from "bn.js"
+import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
 
 export interface SwapParams {
   profilePair: ProfilePairSchema;
@@ -35,6 +36,7 @@ export class CetusSwapService {
     private readonly cetusSignerService: CetusSignerService,
     private readonly balanceManagerService: BalanceManagerService,
     private readonly memdbService: MemDbService,
+    private readonly cetusTxRateLimiterService: CetusTxRateLimiterService,
     ) {}
 
     public getMinAmountToSwap(tokenId: TokenId): BN {
@@ -110,6 +112,7 @@ export class CetusSwapService {
             await this.suiClient.waitForTransaction({
                 digest: signedTx?.digest,
             })
+            await this.cetusTxRateLimiterService.increaseTxCount()
         }
         this.logger.log(`Transaction digest: ${signedTx.digest}`)
     }

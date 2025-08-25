@@ -21,6 +21,7 @@ import {
     TokenSchema,
 } from "../databases"
 import { Connection } from "mongoose"
+import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
 
 @Injectable()
 export class CetusActionService {
@@ -35,6 +36,7 @@ export class CetusActionService {
     private readonly memdbService: MemDbService,
     @InjectMongoose()
     private readonly connection: Connection,
+    private readonly cetusTxRateLimiterService: CetusTxRateLimiterService,
     ) {}
 
     async closePosition({ pool, position }: PoolWithPosition) {
@@ -81,6 +83,7 @@ export class CetusActionService {
             await this.cetusClmmSdk.fullClient.waitForTransaction({
                 digest: transferTxn?.digest,
             })
+            await this.cetusTxRateLimiterService.increaseTxCount()
         }
         this.logger.log(
             `Close position ${position.pos_object_id} successfully, Tx has: ${transferTxn?.digest}`,
@@ -167,6 +170,7 @@ export class CetusActionService {
             await this.cetusClmmSdk.fullClient.waitForTransaction({
                 digest: transferTxn?.digest,
             })
+            await this.cetusTxRateLimiterService.increaseTxCount()
         }
         return true
     }

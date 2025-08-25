@@ -7,6 +7,7 @@ import { MemDbService, PairSchema, TokenSchema } from "../databases"
 import { TickManagerService } from "./tick-manager.service"
 import { CetusSwapService } from "./swap.service"
 import { RetryService } from "@/modules/mixin"
+import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
 
 @Injectable()
 export class CetusCoreService {
@@ -17,10 +18,15 @@ export class CetusCoreService {
         private readonly tickManagerService: TickManagerService,
         private readonly cetusSwapService: CetusSwapService,
         private readonly retryService: RetryService,
+        private readonly cetusTxRateLimiterService: CetusTxRateLimiterService,
     ) { }
 
     @OnEvent(CetusEvent.PoolsUpdated)
     async handlePoolsUpdated(data: Partial<Record<string, PoolWithPosition>>) {
+        if (await this.cetusTxRateLimiterService.isRateLimitExceeded()) {
+            this.logger.error("Rate limit exceeded")
+            return
+        }
         for (const profilePairId of Object.keys(data)) {
             const poolWithPosition = data[profilePairId]
             if (!poolWithPosition) {
