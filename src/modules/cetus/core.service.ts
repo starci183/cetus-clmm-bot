@@ -95,14 +95,6 @@ export class CetusCoreService {
                 this.logger.verbose(
                     `[${pair.displayId}] You actually want ${oppositeToken.name}, must swap to avoid slippage`,
                 )
-                if (
-                    tickDistance <= 1
-                ) {
-                    this.logger.debug(
-                        "Preparing to swap...",
-                    )
-                    continue
-                }
                 await this.processTransactions(poolWithPosition)
             }
         }
