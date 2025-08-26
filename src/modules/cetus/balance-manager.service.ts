@@ -37,10 +37,15 @@ export class BalanceManagerService {
             coinType: token.address,
             owner: envConfig().sui.walletAddress,
         })
-        return this.amountHelpersService.toDenomination(
+        let _totalBalance: BN = new BN(totalBalance)
+        if (tokenId === TokenId.Sui) {
+            _totalBalance = new BN(totalBalance).sub(this.getMinSuiBalance())
+        }
+        const amount = this.amountHelpersService.toDenomination(
             tokenId,
-            new BN(totalBalance),
+            _totalBalance,
         )
+        return amount
     }
 
     public async calculateAvailableBalance(
