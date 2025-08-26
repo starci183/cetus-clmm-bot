@@ -53,7 +53,7 @@ export class CetusSwapService {
         profilePair,
         amount,
         a2b,
-        slippage = 0.005, // 0.5%
+        slippage = 0.001, // 0.1%
     }: SwapParams) {
         const pair = profilePair.pair as PairSchema
         let rawAmount: BN
