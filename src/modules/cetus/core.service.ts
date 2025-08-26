@@ -96,11 +96,10 @@ export class CetusCoreService {
                     `[${pair.displayId}] You actually want ${oppositeToken.name}, must swap to avoid slippage`,
                 )
                 if (
-                    tickDistance <
-                    this.tickManagerService.computeAllowedTickDeviation(pool)
+                    tickDistance <= 1
                 ) {
                     this.logger.debug(
-                        `[${pair.displayId}] Tick distance ${tickDistance} within deviation, keeping...`,
+                        "Preparing to swap...",
                     )
                     continue
                 }
