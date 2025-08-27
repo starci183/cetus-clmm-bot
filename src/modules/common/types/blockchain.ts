@@ -9,4 +9,5 @@ export enum TokenId {
 export enum PairId {
     SuiIka02 = "sui-ika-0.2",
     SuiUsdc005 = "sui-usdc-0.05",
+    SuiUsdc025 = "sui-usdc-0.25",
 }
