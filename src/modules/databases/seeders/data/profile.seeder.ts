@@ -25,7 +25,7 @@ export class ProfileSeeder implements Seeder {
                 description: "Default profile for everyone to farm SUI",
                 profilePairs: [
                     {
-                        pair: createObjectId(PairId.SuiAlkimi03),
+                        pair: createObjectId(PairId.WalrusSui025),
                         priorityToken: createObjectId(TokenId.Sui),
                         capitalAllocatedMax: 100,       
                     },

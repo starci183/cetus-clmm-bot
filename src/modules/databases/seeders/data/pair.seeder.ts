@@ -47,6 +47,13 @@ export class PairSeeder implements Seeder {
                 tokenB: createObjectId(TokenId.Sui),
                 feeRate: 0.003,
             },
+            {
+                _id: createObjectId(PairId.WalrusSui025),
+                displayId: PairId.WalrusSui025,
+                tokenA: createObjectId(TokenId.Walrus),
+                tokenB: createObjectId(TokenId.Sui),
+                feeRate: 0.0025,
+            }
         ]
         try {
             await this.connection.model<PairSchema>(PairSchema.name).create(data)

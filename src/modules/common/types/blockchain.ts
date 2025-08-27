@@ -12,5 +12,6 @@ export enum PairId {
     SuiUsdc005 = "sui-usdc-0.05",
     SuiUsdc025 = "sui-usdc-0.25",
     SuiAlkimi03 = "sui-alkimi-0.3",
+    WalrusSui025 = "walrus-sui-0.25",
 
 }
