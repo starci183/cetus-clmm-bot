@@ -54,6 +54,13 @@ export class TokenSeeder implements Seeder {
                 address: "0x06864a6f921804860930db6ddbe2e16acdf8504495ea7481637a1c8b9a8fe54b::cetus::CETUS",
                 decimals: 9,
             },
+            {
+                _id: createObjectId(TokenId.Alkimi),
+                name: "ALKIMI",
+                displayId: TokenId.Alkimi,
+                address: "0x1a8f4bc33f8ef7fbc851f156857aa65d397a6a6fd27a7ac2ca717b51f2fd9489::alkimi::ALKIMI",
+                decimals: 9,
+            }
         ]
         try {
             await this.connection.model<TokenSchema>(TokenSchema.name).create(data)
