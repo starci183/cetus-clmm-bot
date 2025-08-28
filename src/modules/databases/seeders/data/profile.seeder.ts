@@ -28,7 +28,7 @@ export class ProfileSeeder implements Seeder {
                         pair: createObjectId(PairId.SuiUsdc005),
                         priorityToken: createObjectId(TokenId.Sui),
                         capitalAllocatedMax: 100,       
-                    },
+                    }, 
                 ], 
                 liquidityRanges: []
             },
