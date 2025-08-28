@@ -29,7 +29,7 @@ export class ProfileSeeder implements Seeder {
                         priorityToken: createObjectId(TokenId.Sui),
                         capitalAllocatedMax: 100,       
                     },
-                ],
+                ], 
                 liquidityRanges: []
             },
         ]
