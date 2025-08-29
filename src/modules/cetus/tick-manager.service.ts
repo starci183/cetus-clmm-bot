@@ -43,7 +43,7 @@ export class TickManagerService {
         pool: Pool
     ) {
         const tickSpacing = this.tickSpacing(pool)
-        return Math.min(Math.floor(tickSpacing * TICK_DEVIATION_THRESHOLD), 2)
+        return Math.min(Math.floor(tickSpacing * TICK_DEVIATION_THRESHOLD), 4)
     }
 
     public canAddLiquidity(
