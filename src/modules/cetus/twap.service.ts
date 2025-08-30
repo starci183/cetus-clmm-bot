@@ -50,7 +50,7 @@ export class CetusTWAPService {
     public async checkVolatility({
         pairId,
         windowSec = 10,
-        threshold = 0.1,
+        threshold = 0.4,
         tickSpacing, // 40 ticks = 10s
     }: CheckVolatilityParams): Promise<CheckVolatilityCheckResult> {
         const _threshold = roundNumber((threshold * tickSpacing) / 40)
