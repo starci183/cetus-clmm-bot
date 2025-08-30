@@ -82,7 +82,7 @@ export class TickManagerService {
                 leftOverRight: true,
             }
         }
-    }
+    } 
 
     public canMovePosition(
         pool: Pool,
