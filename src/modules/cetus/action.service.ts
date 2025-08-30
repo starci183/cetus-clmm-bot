@@ -108,7 +108,6 @@ export class CetusActionService {
             this.logger.warn(`[${pair.displayId}] Pair is volatile, delta: ${delta}`)
             return false
         }
-        this.logger.debug(`Current TWAP delta: ${delta}`)
         if (!this.tickManagerService.canAddLiquidity(pool, profilePair)) {
             this.logger.warn("Cannot add liquidity at current tick, skipping...")
             return false
