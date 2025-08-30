@@ -77,7 +77,7 @@ export class CetusTWAPService {
 
         const since = dayjs().subtract(windowSec, "second").valueOf()
         const recentTicks = ticks.filter((t) => t.timestamp >= since)
-        if (recentTicks.length < 5) return { isVolatile: false, delta: 0, isLoading: true }
+        if (recentTicks.length < 2) return { isVolatile: false, delta: 0, isLoading: true }
 
         const minTick = Math.min(...recentTicks.map((t) => t.currentTick))
         const maxTick = Math.max(...recentTicks.map((t) => t.currentTick))
