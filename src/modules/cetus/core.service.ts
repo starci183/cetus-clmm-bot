@@ -39,7 +39,9 @@ export class CetusCoreService {
             const pair = profilePair.pair as PairSchema  
             const tokenA = pair.tokenA as TokenSchema
             const tokenB = pair.tokenB as TokenSchema
-
+            // create tick
+            await this.cetusTWAPService.addTick(pair.displayId, pool.current_tick_index)
+            // check volatility
             const { delta } = await this.cetusTWAPService.checkVolatility({
                 pairId: pair.displayId,
                 tickSpacing: this.tickManagerService.tickSpacing(pool),

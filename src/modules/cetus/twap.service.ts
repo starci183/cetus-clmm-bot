@@ -2,10 +2,6 @@ import { Injectable, Logger } from "@nestjs/common"
 import { InjectCache, createCacheKey } from "../cache"
 import { Cache } from "cache-manager"
 import { PairId, roundNumber } from "../common"
-import { OnEvent } from "@nestjs/event-emitter"
-import { CetusEvent } from "./events"
-import { PoolWithPosition } from "./types"
-import { PairSchema } from "../databases/mongodb/schemas"
 import dayjs from "dayjs"
 
 export interface TWAPTick {
@@ -21,11 +17,11 @@ export class CetusTWAPService {
         private readonly cache: Cache,
     ) { }
 
-    private createTicksCacheKey(pairId: PairId) {
+    public createTicksCacheKey(pairId: PairId) {
         return createCacheKey(pairId, "twap")
     }
 
-    private async getTicks(pairId: PairId) {
+    public async getTicks(pairId: PairId) {
         const key = this.createTicksCacheKey(pairId)
         const ticks = await this.cache.get<Array<TWAPTick>>(key)
         if (!ticks) {
@@ -34,7 +30,7 @@ export class CetusTWAPService {
         return ticks
     }
 
-    private async addTick(pairId: PairId, tick: TWAPTick) {
+    public async addTick(pairId: PairId, currentTick: number) {
         const key = this.createTicksCacheKey(pairId)
         const ticks = await this.getTicks(pairId)
         if (!ticks) {
@@ -44,25 +40,11 @@ export class CetusTWAPService {
             // remove the first tick
             ticks.shift()
         }
-        ticks.push(tick)
+        ticks.push({
+            timestamp: dayjs().valueOf(),
+            currentTick,
+        })
         await this.cache.set(key, ticks)
-    }
-
-    @OnEvent(CetusEvent.PoolsUpdated)
-    async handlePoolsUpdated(data: Partial<Record<string, PoolWithPosition>>) {
-        for (const profilePairId of Object.keys(data)) {
-            const poolWithPosition = data[profilePairId]
-            if (!poolWithPosition) {
-                throw new Error(`Pool with position ${profilePairId} not found`)
-            }
-            // add tick
-            const tick = {
-                timestamp: Date.now(),
-                currentTick: poolWithPosition.pool.current_tick_index,
-            }
-            const pair = poolWithPosition.profilePair.pair as PairSchema
-            await this.addTick(pair.displayId, tick)
-        }
     }
 
     public async checkVolatility({
