@@ -22,6 +22,7 @@ import {
 } from "../databases"
 import { Connection } from "mongoose"
 import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
+import { CetusTWAPService } from "./twap.service"
 
 @Injectable()
 export class CetusActionService {
@@ -37,6 +38,7 @@ export class CetusActionService {
     @InjectMongoose()
     private readonly connection: Connection,
     private readonly cetusTxRateLimiterService: CetusTxRateLimiterService,
+    private readonly cetusTWAPService: CetusTWAPService,
     ) {}
 
     async closePosition({ pool, position }: PoolWithPosition) {
@@ -91,13 +93,27 @@ export class CetusActionService {
     }
 
     async addLiquidityFixToken(pool: Pool, profilePair: ProfilePairSchema): Promise<boolean> {
-    /// PROTECT HERE
+        /// PROTECT HERE
+        // check if pair is volatile
+        const pair = profilePair.pair as PairSchema
+        const { isVolatile, delta, isLoading } = await this.cetusTWAPService.checkVolatility({
+            pairId: pair.displayId,
+            tickSpacing: this.tickManagerService.tickSpacing(pool),
+        })
+        if (isLoading) {
+            this.logger.warn(`[${pair.displayId}] loading for twap...`)
+            return false
+        }
+        if (isVolatile) {
+            this.logger.warn(`[${pair.displayId}] Pair is volatile, delta: ${delta}`)
+            return false
+        }
+        this.logger.debug(`Current TWAP delta: ${delta}`)
         if (!this.tickManagerService.canAddLiquidity(pool, profilePair)) {
             this.logger.warn("Cannot add liquidity at current tick, skipping...")
             return false
         }
         const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
-        const pair = profilePair.pair as PairSchema
         const tokenToAdd = (
       priorityAOverB ? pair.tokenA : pair.tokenB
     ) as TokenSchema
