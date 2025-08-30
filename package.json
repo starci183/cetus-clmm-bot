@@ -36,6 +36,7 @@
     "cache-manager": "^7.1.1",
     "cacheable": "^1.10.4",
     "config": "^4.1.1",
+    "dayjs": "^1.11.17",
     "decimal.js": "^10.6.0",
     "decimals": "^1.0.0",
     "ioredis": "^5.7.0",

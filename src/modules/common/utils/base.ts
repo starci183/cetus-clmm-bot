@@ -10,3 +10,7 @@ export const createObjectId = (id: string = v4()): Types.ObjectId => {
     }
     return new Types.ObjectId(hex)
 }
+
+export const roundNumber = (num: number, precision = 5) => {
+    return Number(num.toFixed(precision))
+}

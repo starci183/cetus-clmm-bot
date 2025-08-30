@@ -15,6 +15,8 @@ import { CetusCoreService } from "./core.service"
 import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
 // import { BalanceManagerService } from "./balance-manager.service"
 // import { CetusSwapService } from "./cetus-swap.service"
+import { CetusTWAPService } from "./twap.service"
+
 @Module({
     providers: [
         //CetusSignerService,
@@ -29,6 +31,7 @@ import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
         CetusActionService,
         CetusCoreService,
         CetusTxRateLimiterService,
+        CetusTWAPService,
         //MixinService,
         //CetusSwapService,
         //Allo  cationManagerService,

@@ -8,6 +8,7 @@ import { TickManagerService } from "./tick-manager.service"
 import { CetusSwapService } from "./swap.service"
 import { RetryService } from "@/modules/mixin"
 import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
+import { CetusTWAPService } from "./twap.service"
 
 @Injectable()
 export class CetusCoreService {
@@ -19,6 +20,7 @@ export class CetusCoreService {
         private readonly cetusSwapService: CetusSwapService,
         private readonly retryService: RetryService,
         private readonly cetusTxRateLimiterService: CetusTxRateLimiterService,
+        private readonly cetusTWAPService: CetusTWAPService,
     ) { }
 
     @OnEvent(CetusEvent.PoolsUpdated)
@@ -35,6 +37,19 @@ export class CetusCoreService {
 
             const { pool, position, profilePair } = poolWithPosition
             const pair = profilePair.pair as PairSchema
+            // check if pair is volatile
+            const { isVolatile, delta, isLoading } = await this.cetusTWAPService.checkVolatility({
+                pairId: pair.displayId,
+                tickSpacing: this.tickManagerService.tickSpacing(pool),
+            })
+            if (isLoading) {
+                this.logger.warn(`[${pair.displayId}] loading for twap...`)
+                continue
+            }
+            if (isVolatile) {
+                this.logger.warn(`[${pair.displayId}] Pair is volatile, delta: ${delta}`)
+                continue
+            }
             const tokenA = pair.tokenA as TokenSchema
             const tokenB = pair.tokenB as TokenSchema
 

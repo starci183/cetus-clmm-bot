@@ -29,7 +29,7 @@ export class PoolManagerService {
     // update state each 10s
     // we use 4 rpc, rate limit is 100 request/30s
     // so we have 60 requests per 30s left
-    @Cron("*/3 * * * * *")
+    @Cron("*/1 * * * * *")
     async updatePoolState() {
         await this.retryService.retry({
             action: async () => {
