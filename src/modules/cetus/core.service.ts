@@ -50,6 +50,7 @@ export class CetusCoreService {
                 this.logger.warn(`[${pair.displayId}] Pair is volatile, delta: ${delta}`)
                 continue
             }
+            this.logger.debug(`[${pair.displayId}] Pair is not volatile, delta: ${delta}`)
             const tokenA = pair.tokenA as TokenSchema
             const tokenB = pair.tokenB as TokenSchema
 
