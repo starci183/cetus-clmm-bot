@@ -58,16 +58,11 @@ export class CetusTWAPService {
         if (!ticks.length) return { isVolatile: false, delta: 0, isLoading: true }
 
         const since = dayjs().subtract(windowSec, "second").valueOf()
-        const recentTicks = ticks.filter((t) => t.timestamp >= since)
-        if (recentTicks.length < 2) return { isVolatile: false, delta: 0, isLoading: true }
-
-        const minTick = Math.min(...recentTicks.map((t) => t.currentTick))
-        const maxTick = Math.max(...recentTicks.map((t) => t.currentTick))
-
-        const minTime = Math.min(...recentTicks.map((t) => t.timestamp))
-        const maxTime = Math.max(...recentTicks.map((t) => t.timestamp))
-
-        const delta = roundNumber(Math.abs((maxTick - minTick) / ((maxTime - minTime) / 1000)))
+        const recentTicks = ticks.filter(t => t.timestamp >= since)
+        const tickValues = recentTicks.map(t => t.currentTick)
+        const maxTick = Math.max(...tickValues)
+        const minTick = Math.min(...tickValues)
+        const delta = roundNumber((maxTick - minTick) / windowSec)
         return { isVolatile: delta >= _threshold, delta, isLoading: false }
     }
 }
