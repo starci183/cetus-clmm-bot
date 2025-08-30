@@ -66,6 +66,8 @@ export class PoolManagerService {
                 envConfig().sui.walletAddress,
                 [pool.poolAddress], // use the pool address from the fetched pool,
             )
+            // reset the pools
+            this.cetusV3Pools = {}
             this.cetusV3Pools[profilePair.id.toString()] = {
                 pool,
                 position,
