@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { InjectCache, createCacheKey } from "../cache"
 import { Cache } from "cache-manager"
-import { PairId, roundNumber } from "../common"
+import { PairId } from "../common"
 import dayjs from "dayjs"
 
 export interface TWAPTick {
@@ -57,11 +57,9 @@ export class CetusTWAPService {
 
     public async checkVolatility({
         pairId,
-        // mean that 3s it move about 9 ticks
-        threshold = 4,
-        tickSpacing, // 40 ticks = 10s
+        // mean that 3s it move about 8 ticks
+        threshold = 3,
     }: CheckVolatilityParams): Promise<CheckVolatilityResult> {
-        const _threshold = roundNumber((threshold * tickSpacing) / 40)
         const ticks = await this.getTicks(pairId)
         if (!ticks.length || ticks.length < 2) {
             return { isVolatile: false, delta: 0, isLoading: true }
@@ -73,7 +71,7 @@ export class CetusTWAPService {
             (lastTick.timestamp - secondLastTick.timestamp) / 1000
         )
         return {
-            isVolatile: Math.abs(twap) >= _threshold,
+            isVolatile: Math.abs(twap) >= threshold,
             delta: twap,
             isLoading: false,
             direction: twap !== 0 ? (twap > 0 ? "up" : "down") : undefined
@@ -84,7 +82,6 @@ export class CetusTWAPService {
 export interface CheckVolatilityParams {
     pairId: PairId;
     threshold?: number;
-    tickSpacing: number;
 }
 
 export interface CheckVolatilityResult {

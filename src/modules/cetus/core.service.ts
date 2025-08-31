@@ -61,8 +61,7 @@ export class CetusCoreService {
                 delta
             } = await this.cetusTWAPService.checkVolatility({
                 pairId: pair.displayId,
-                tickSpacing: this.tickManagerService.tickSpacing(pool),
-            })
+            })  
             // Currently on reverse trend
             this.logger.verbose(`[${pair.displayId}] Direction: ${direction}, Delta: ${delta}`)
             if (isVolatile) {

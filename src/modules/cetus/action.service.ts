@@ -98,7 +98,6 @@ export class CetusActionService {
         const pair = profilePair.pair as PairSchema
         const { isVolatile, delta, isLoading } = await this.cetusTWAPService.checkVolatility({
             pairId: pair.displayId,
-            tickSpacing: this.tickManagerService.tickSpacing(pool),
         })
         if (isLoading) {
             this.logger.warn(`[${pair.displayId}] loading for twap...`)
