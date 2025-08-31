@@ -63,10 +63,9 @@ export class CetusTWAPService {
     }: CheckVolatilityParams): Promise<CheckVolatilityResult> {
         const _threshold = roundNumber((threshold * tickSpacing) / 40)
         const ticks = await this.getTicks(pairId)
-        if (!ticks.length) {
+        if (!ticks.length || ticks.length < 2) {
             return { isVolatile: false, delta: 0, isLoading: true }
         }
-        // fetch the last 2 ticks
         const [secondLastTick, lastTick] = ticks.slice(-2)
         // compute twap to guess the direction
         const twap = 
