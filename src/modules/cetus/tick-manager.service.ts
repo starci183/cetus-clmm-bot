@@ -30,7 +30,7 @@ export class TickManagerService {
         ]
     }
 
-    public tickDistanceBetweenPriorityBound(
+    public  tickDistanceBetweenPriorityBound(
         pool: Pool,
         priorityAOverB: boolean
     ) {

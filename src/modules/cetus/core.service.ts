@@ -70,7 +70,25 @@ export class CetusCoreService {
                 })
                 continue
             }
-
+            /// We check volatility here if it's volatile, we will not move position
+            const { direction } = await this.cetusTWAPService.checkVolatility({
+                pairId: pair.displayId,
+                tickSpacing: this.tickManagerService.tickSpacing(pool),
+            })
+            // Currently on reverse trend
+            if (direction) {
+                // we love ika and price ika up => all asset will convert to sui
+                if (
+                    priorityAOverB && direction === "up" 
+                    || 
+                    !priorityAOverB && direction === "down"
+                ) {
+                    this.logger.verbose(`[${pair.displayId}] Currently on reverse trend, 
+                        have to remove position...`)
+                    await this.processTransactions(poolWithPosition)
+                    continue
+                }
+            }
             /// Already has a position
             const { isOutOfRange, tickDistance, leftOverRight } =
                 this.tickManagerService.computePositionRange(pool, position)

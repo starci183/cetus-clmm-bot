@@ -9,6 +9,7 @@ export interface TWAPTick {
     currentTick: number;
 }
 
+// v2 twap
 @Injectable()
 export class CetusTWAPService {
     private readonly logger = new Logger(CetusTWAPService.name)
@@ -17,11 +18,15 @@ export class CetusTWAPService {
         private readonly cache: Cache,
     ) { }
 
-    public createTicksCacheKey(pairId: PairId) {
+    public createTicksCacheKey(
+        pairId: PairId
+    ) {
         return createCacheKey(pairId, "twap")
     }
 
-    public async getTicks(pairId: PairId) {
+    public async getTicks(
+        pairId: PairId
+    ) {
         const key = this.createTicksCacheKey(pairId)
         const ticks = await this.cache.get<Array<TWAPTick>>(key)
         if (!ticks) {
@@ -30,7 +35,10 @@ export class CetusTWAPService {
         return ticks
     }
 
-    public async addTick(pairId: PairId, currentTick: number) {
+    public async addTick(
+        pairId: PairId,
+        currentTick: number
+    ) {
         const key = this.createTicksCacheKey(pairId)
         const ticks = await this.getTicks(pairId)
         if (!ticks) {
@@ -49,33 +57,40 @@ export class CetusTWAPService {
 
     public async checkVolatility({
         pairId,
-        windowSec = 10,
-        threshold = 10,
+        // mean that 3s it move about 9 ticks
+        threshold = 3,
         tickSpacing, // 40 ticks = 10s
-    }: CheckVolatilityParams): Promise<CheckVolatilityCheckResult> {
+    }: CheckVolatilityParams): Promise<CheckVolatilityResult> {
         const _threshold = roundNumber((threshold * tickSpacing) / 40)
         const ticks = await this.getTicks(pairId)
-        if (!ticks.length) return { isVolatile: false, delta: 0, isLoading: true }
-
-        const since = dayjs().subtract(windowSec, "second").valueOf()
-        const recentTicks = ticks.filter(t => t.timestamp >= since)
-        const tickValues = recentTicks.map(t => t.currentTick)
-        const maxTick = Math.max(...tickValues)
-        const minTick = Math.min(...tickValues)
-        const delta = roundNumber((maxTick - minTick) / windowSec)
-        return { isVolatile: delta >= _threshold, delta, isLoading: false }
+        if (!ticks.length) {
+            return { isVolatile: false, delta: 0, isLoading: true }
+        }
+        // fetch the last 2 ticks
+        const [secondLastTick, lastTick] = ticks.slice(-2)
+        // compute twap to guess the direction
+        const twap = 
+        (lastTick.currentTick - secondLastTick.currentTick) / (
+            (lastTick.timestamp - secondLastTick.timestamp) / 1000
+        )
+        return {
+            isVolatile: Math.abs(twap) >= _threshold,
+            delta: twap,
+            isLoading: false,
+            direction: twap >= 0 ? "up" : "down"
+        }
     }
 }
 
 export interface CheckVolatilityParams {
     pairId: PairId;
-    windowSec?: number;
     threshold?: number;
     tickSpacing: number;
 }
 
-export interface CheckVolatilityCheckResult {
+export interface CheckVolatilityResult {
     isVolatile: boolean;
     delta: number;
     isLoading: boolean;
+    direction?: "up" | "down";
 }
