@@ -91,12 +91,16 @@ export class TickManagerService {
     ) {
         const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
         const tickSpacing = this.tickSpacing(pool)
-        const canAddLiquidity = this.canAddLiquidity(pool, profilePair)
-        if (priorityAOverB) {
-            return canAddLiquidity && ((Math.abs(position.tick_lower_index - pool.current_tick_index) > tickSpacing))
-        } else {
-            return canAddLiquidity && ((Math.abs(position.tick_upper_index - pool.current_tick_index) > tickSpacing))
+        const tickDistance = 
+        priorityAOverB ? Math.abs(
+            position.tick_lower_index - pool.current_tick_index
+        ) : Math.abs(
+            position.tick_upper_index - pool.current_tick_index
+        )
+        if (tickDistance >= Math.ceil(tickSpacing / 2)) {
+            return true
         }
+        return false
     }
 }
 
