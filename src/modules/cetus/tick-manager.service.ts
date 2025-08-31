@@ -84,24 +84,24 @@ export class TickManagerService {
         }
     } 
 
+    // change logic, remove pos after it more than allowed deviation
     public canMovePosition(
         pool: Pool,
         position: Position,
         profilePair: ProfilePairSchema
     ) {
         const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
-        const tickSpacing = this.tickSpacing(pool)
         const tickDistance = 
         priorityAOverB ? Math.abs(
             position.tick_lower_index - pool.current_tick_index
         ) : Math.abs(
             position.tick_upper_index - pool.current_tick_index
         )
-        if (tickDistance >= Math.ceil(tickSpacing / 2)) {
+        if (tickDistance > this.computeAllowedTickDeviation(pool)) {
             return true
         }
         return false
-    }
+    }       
 }
 
 export interface PositionOutOfRangeResponse {
