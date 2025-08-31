@@ -42,12 +42,6 @@ export class CetusCoreService {
             // create tick
             await this.cetusTWAPService.addTick(pair.displayId, pool.current_tick_index)
             // check volatility
-            const { delta } = await this.cetusTWAPService.checkVolatility({
-                pairId: pair.displayId,
-                tickSpacing: this.tickManagerService.tickSpacing(pool),
-            })
-            this.logger.debug(`[${pair.displayId}] TWAP delta: ${delta}`)
-
             const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
             //// LOG
             this.logger.fatal(
@@ -60,22 +54,16 @@ export class CetusCoreService {
             this.logger.fatal(
                 `[${pair.displayId}] Distance from bounds: Left: ${Math.abs(tickLower - pool.current_tick_index)}, Right: ${Math.abs(pool.current_tick_index - tickUpper)}`,
             )
-
-            /// No position -> try add liquidity
-            if (!position) {
-                await this.retryService.retry({
-                    action: async () => {
-                        await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
-                    },
-                })
-                continue
-            }
             /// We check volatility here if it's volatile, we will not move position
-            const { direction } = await this.cetusTWAPService.checkVolatility({
+            const { 
+                direction, 
+                delta
+            } = await this.cetusTWAPService.checkVolatility({
                 pairId: pair.displayId,
                 tickSpacing: this.tickManagerService.tickSpacing(pool),
             })
             // Currently on reverse trend
+            this.logger.verbose(`[${pair.displayId}] Direction: ${direction}, Delta: ${delta}`)
             if (direction) {
                 // we love ika and price ika up => all asset will convert to sui
                 if (
@@ -88,6 +76,15 @@ export class CetusCoreService {
                     await this.processTransactions(poolWithPosition)
                     continue
                 }
+            }
+            /// No position -> try add liquidity
+            if (!position) {
+                await this.retryService.retry({
+                    action: async () => {
+                        await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
+                    },
+                })
+                continue
             }
             /// Already has a position
             const { isOutOfRange, tickDistance, leftOverRight } =

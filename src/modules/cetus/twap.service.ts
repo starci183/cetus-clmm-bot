@@ -76,7 +76,7 @@ export class CetusTWAPService {
             isVolatile: Math.abs(twap) >= _threshold,
             delta: twap,
             isLoading: false,
-            direction: twap >= 0 ? "up" : "down"
+            direction: twap !== 0 ? (twap > 0 ? "up" : "down") : undefined
         }
     }
 }
