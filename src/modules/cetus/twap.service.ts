@@ -57,8 +57,8 @@ export class CetusTWAPService {
 
     public async checkVolatility({
         pairId,
-        // mean that 3s it move about 8 ticks
-        threshold = 3,
+        // mean that 4 it move about 8 ticks
+        threshold = 4,
     }: CheckVolatilityParams): Promise<CheckVolatilityResult> {
         const ticks = await this.getTicks(pairId)
         if (!ticks.length || ticks.length < 2) {
