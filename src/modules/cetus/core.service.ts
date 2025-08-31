@@ -56,6 +56,7 @@ export class CetusCoreService {
             )
             /// We check volatility here if it's volatile, we will not move position
             const { 
+                isVolatile,
                 direction, 
                 delta
             } = await this.cetusTWAPService.checkVolatility({
@@ -64,7 +65,7 @@ export class CetusCoreService {
             })
             // Currently on reverse trend
             this.logger.verbose(`[${pair.displayId}] Direction: ${direction}, Delta: ${delta}`)
-            if (direction) {
+            if (isVolatile) {
                 // we love ika and price ika up => all asset will convert to sui
                 if (
                     priorityAOverB && direction === "up" 
@@ -128,11 +129,15 @@ export class CetusCoreService {
     private async processTransactions(
         poolWithPosition: PoolWithPosition,
     ) {
-        const { pool, profilePair } = poolWithPosition
+        const { pool, profilePair, position } = poolWithPosition
         const pair = profilePair.pair as PairSchema
 
         const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
         try {
+            if (!position) {
+                this.logger.error(`[${pair.displayId}] No position found, skipping...`)
+                return
+            }
             // 1️⃣ Close position
             await this.retryService.retry({
                 action: async () => {
