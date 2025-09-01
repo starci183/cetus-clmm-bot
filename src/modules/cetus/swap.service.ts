@@ -53,7 +53,7 @@ export class CetusSwapService {
         profilePair,
         amount,
         a2b,
-        slippage = 0.001, // 0.1%
+        slippage = 0.005, // 0.5%
     }: SwapParams) {
         const maxCheck = 10
         // check up to 10 times if swap is successful
