@@ -131,10 +131,16 @@ export class TickManagerService {
     public requireZapOrDirectAddLiquidity(
         pool: Pool,
         profilePair: ProfilePairSchema
-    ) {
+    ): ZapOrDirectAddLiquidity {
         const canAddLiquidity = this.canAddLiquidity(pool, profilePair)
+        if (canAddLiquidity) {
+            return ZapOrDirectAddLiquidity.Direct
+        }
         const canZapAddLiquidity = this.canZapAddLiquidity(pool, profilePair)
-        return canAddLiquidity || canZapAddLiquidity
+        if (canZapAddLiquidity) {
+            return ZapOrDirectAddLiquidity.Zap
+        }
+        return ZapOrDirectAddLiquidity.NotYet
     }
 }
 
@@ -142,4 +148,10 @@ export interface PositionOutOfRangeResponse {
     isOutOfRange: boolean
     tickDistance: number
     leftOverRight?: boolean
+}
+
+export enum ZapOrDirectAddLiquidity {
+    NotYet = "notYet",
+    Zap = "zap",
+    Direct = "direct",
 }

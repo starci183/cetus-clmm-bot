@@ -4,7 +4,7 @@ import { OnEvent } from "@nestjs/event-emitter"
 import { CetusEvent } from "./events"
 import { PoolWithPosition } from "./types"
 import { MemDbService, PairSchema, TokenSchema } from "../databases"
-import { TickManagerService } from "./tick-manager.service"
+import { TickManagerService, ZapOrDirectAddLiquidity } from "./tick-manager.service"
 import { CetusSwapService } from "./swap.service"
 import { RetryService } from "@/modules/mixin"
 import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
@@ -81,21 +81,28 @@ export class CetusCoreService {
             }
             /// No position -> try add liquidity
             if (!position) {
-                if (this.tickManagerService.requireZapOrDirectAddLiquidity(pool, profilePair)) {
+                const zapOrDirectAddLiquidity = this.tickManagerService.requireZapOrDirectAddLiquidity(pool, profilePair)
+                switch (zapOrDirectAddLiquidity) {
+                case ZapOrDirectAddLiquidity.Zap:
                     this.logger.verbose(`[${pair.displayId}] Require zap to add liquidity`)
                     await this.retryService.retry({
                         action: async () => {
                             await this.cetusZapService.depositOneSideFixToken(pool, profilePair)
                         },
                     })
-                } else {
+                    break
+                case ZapOrDirectAddLiquidity.Direct:
                     this.logger.verbose(`[${pair.displayId}] Require direct to add liquidity`)
                     await this.retryService.retry({
                         action: async () => {
                             await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
                         },
                     })
-                }
+                    break
+                case ZapOrDirectAddLiquidity.NotYet:
+                    this.logger.verbose(`[${pair.displayId}] Not yet to add liquidity`)
+                    break
+                }   
                 continue
             }
             /// Already has a position
@@ -166,21 +173,27 @@ export class CetusCoreService {
                 }
             })
 
-            if (this.tickManagerService.requireZapOrDirectAddLiquidity(pool, profilePair)) {
+            const zapOrDirectAddLiquidity = this.tickManagerService.requireZapOrDirectAddLiquidity(pool, profilePair)
+            switch (zapOrDirectAddLiquidity) {
+            case ZapOrDirectAddLiquidity.Zap:
                 this.logger.verbose(`[${pair.displayId}] Require zap to add liquidity`)
                 await this.retryService.retry({
                     action: async () => {
                         await this.cetusZapService.depositOneSideFixToken(pool, profilePair)
                     }
                 })
-            }
-            else {
+                break
+            case ZapOrDirectAddLiquidity.Direct:
                 this.logger.verbose(`[${pair.displayId}] Require direct to add liquidity`)
                 await this.retryService.retry({
                     action: async () => {
                         await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
                     }
                 })
+                break
+            case ZapOrDirectAddLiquidity.NotYet:
+                this.logger.verbose(`[${pair.displayId}] Not yet to add liquidity`)
+                break
             }
         } catch (error) {
             this.logger.error(
