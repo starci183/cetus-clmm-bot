@@ -91,17 +91,14 @@ export class TickManagerService {
         profilePair: ProfilePairSchema
     ) {
         const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
-        const tickDistance = 
-        priorityAOverB ? Math.abs(
-            position.tick_lower_index - pool.current_tick_index
-        ) : Math.abs(
-            position.tick_upper_index - pool.current_tick_index
-        )
-        if (tickDistance > this.computeAllowedTickDeviation(pool)) {
-            return true
+        const tickSpacing = this.tickSpacing(pool)
+        const canAddLiquidity = this.canAddLiquidity(pool, profilePair)
+        if (priorityAOverB) {
+            return canAddLiquidity && ((Math.abs(position.tick_lower_index - pool.current_tick_index) > tickSpacing))
+        } else {
+            return canAddLiquidity && ((Math.abs(position.tick_upper_index - pool.current_tick_index) > tickSpacing))
         }
-        return false
-    }       
+    }     
 }
 
 export interface PositionOutOfRangeResponse {
