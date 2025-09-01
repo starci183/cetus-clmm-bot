@@ -66,19 +66,6 @@ export class CetusCoreService {
             })  
             // Currently on reverse trend
             this.logger.verbose(`[${pair.displayId}] Direction: ${direction}, Delta: ${delta}`)
-            if (isVolatile) {
-                // we love ika and price ika up => all asset will convert to sui
-                if (
-                    priorityAOverB && direction === "up" 
-                    || 
-                    !priorityAOverB && direction === "down"
-                ) {
-                    this.logger.verbose(`[${pair.displayId}] Currently on reverse trend, 
-                        have to remove position...`)
-                    await this.processTransactions(poolWithPosition)
-                    continue
-                }
-            }
             /// No position -> try add liquidity
             if (!position) {
                 const zapOrDirectAddLiquidity = this.tickManagerService.requireZapOrDirectAddLiquidity(pool, profilePair)
@@ -110,6 +97,19 @@ export class CetusCoreService {
                 this.tickManagerService.computePositionRange(pool, position)
             if (!isOutOfRange) {
                 this.logger.log(`[${pair.displayId}] Position is in range, earning fees...`)
+                if (isVolatile) {
+                    // we love ika and price ika up => all asset will convert to sui
+                    if (
+                        priorityAOverB && direction === "up" 
+                        || 
+                        !priorityAOverB && direction === "down"
+                    ) {
+                        this.logger.verbose(`[${pair.displayId}] Currently on reverse trend, 
+                            have to remove position...`)
+                        await this.processTransactions(poolWithPosition)
+                        continue
+                    }
+                }
                 continue
             }
             // Determine the direction of the swap
