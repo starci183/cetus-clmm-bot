@@ -77,21 +77,21 @@ export class CetusActionService {
           pos_id: position.pos_object_id,
           collect_fee: true,
       })
-        const transferTxn = await this.cetusClmmSdk.fullClient.sendTransaction(
+        const txn = await this.cetusClmmSdk.fullClient.sendTransaction(
             this.cetusSignerService.getSigner(),
             close_position_payload,
         )
-        if (transferTxn?.effects?.status.status === "failure") {
-            throw new Error(transferTxn.effects.status.error)
+        if (txn?.effects?.status.status === "failure") {
+            throw new Error(txn.effects.status.error)
         }
-        if (transferTxn?.digest) {
+        if (txn?.digest) {
             await this.cetusClmmSdk.fullClient.waitForTransaction({
-                digest: transferTxn?.digest,
+                digest: txn?.digest,
             })
             await this.cetusTxRateLimiterService.increaseTxCount()
         }
         this.logger.log(
-            `Close position ${position.pos_object_id} successfully, Tx has: ${transferTxn?.digest}`,
+            `Close position ${position.pos_object_id} successfully, Tx has: ${txn?.digest}`,
         )
     }
 
