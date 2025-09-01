@@ -16,7 +16,6 @@ import { SuiClient } from "@mysten/sui/client"
 import { BalanceManagerService } from "./balance-manager.service"
 import BN from "bn.js"
 import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
-import { sleep } from "@/modules/common"
 
 export interface SwapParams {
   profilePair: ProfilePairSchema
@@ -72,15 +71,13 @@ export class CetusSwapService {
                 this.logger.verbose(`Swap attempt #${i}: ${JSON.stringify(result)}`)
                 if (result.balanceEnough && result.routeFound && result.digest) {
                     if (ignoreFirst) {
-                        ignoreFirst = false
-                        await sleep(100)
+                        ignoreFirst = false      
                     } else {
                         return result
                     }
                 }
             } catch (error) {
                 this.logger.error(`Swap attempt #${i} failed`, error.message)
-                await sleep(100)
             }
         }
 
@@ -136,23 +133,19 @@ export class CetusSwapService {
             from: tokenFrom,
             target: tokenTarget,
         })
-
         if (!routerDataV3) {
             this.logger.error(`No router data v3 found for ${tokenFrom} -> ${tokenTarget}`)
             return { balanceEnough: true, routeFound: false, error: "No route found" }
         }
-
         // Build and execute transaction
         const txb = new Transaction()
         txb.setSender(envConfig().sui.walletAddress)
-
         try {
             await this.cetusAggregatorSdk.fastRouterSwap({
                 router: routerDataV3,
                 slippage,
                 txb,
             })
-
             const txn = await this.suiClient.signAndExecuteTransaction({
                 transaction: txb,
                 signer: this.cetusSignerService.getSigner(),
