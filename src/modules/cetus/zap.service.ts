@@ -90,7 +90,7 @@ export class CetusZapService implements OnModuleInit {
             coin_type_a: pool.coinTypeA,
             coin_type_b: pool.coinTypeB,
             tick_lower: tickLower,
-            tick_upper: tickUpper   ,
+            tick_upper: tickUpper,
             slippage,
         })
         const transferTxn = await this.cetusZapSdk.FullClient.sendTransaction(
