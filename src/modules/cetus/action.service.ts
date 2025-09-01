@@ -81,6 +81,9 @@ export class CetusActionService {
             this.cetusSignerService.getSigner(),
             close_position_payload,
         )
+        if (transferTxn?.effects?.status.status === "failure") {
+            throw new Error(transferTxn.effects.status.error)
+        }
         if (transferTxn?.digest) {
             await this.cetusClmmSdk.fullClient.waitForTransaction({
                 digest: transferTxn?.digest,
@@ -162,13 +165,16 @@ export class CetusActionService {
         const prevBalance = await this.balanceManagerService.getBalance(
             tokenToAdd.displayId,
         )
-        const transferTxn = await this.cetusClmmSdk.fullClient.sendTransaction(
+        const txn = await this.cetusClmmSdk.fullClient.sendTransaction(
             this.cetusSignerService.getSigner(),
             addLiquidityFixedTokenPayload,
         )
         const afterBalance = await this.balanceManagerService.getBalance(
             tokenToAdd.displayId,
         )
+        if (txn?.effects?.status.status === "failure") {
+            throw new Error(txn.effects.status.error)
+        }
         await this.connection
             .model<LiquidityRangeSchema>(LiquidityRangeSchema.name)
             .create({
@@ -179,11 +185,11 @@ export class CetusActionService {
                 originalCapital: prevBalance - afterBalance,
             })
         this.logger.log(
-            `Add liquidity successfully, Tx has: ${transferTxn?.digest}`,
+            `Add liquidity successfully, Tx has: ${txn?.digest}`,
         )
-        if (transferTxn?.digest) {
+        if (txn?.digest) {
             await this.cetusClmmSdk.fullClient.waitForTransaction({
-                digest: transferTxn?.digest,
+                digest: txn?.digest,
             })
             await this.cetusTxRateLimiterService.increaseTxCount()
         }

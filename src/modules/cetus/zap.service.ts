@@ -93,13 +93,16 @@ export class CetusZapService implements OnModuleInit {
             tick_upper: tickUpper,
             slippage,
         })
-        const transferTxn = await this.cetusZapSdk.FullClient.sendTransaction(
+        const txn = await this.cetusZapSdk.FullClient.sendTransaction(
             this.cetusSignerService.getSigner(),
             depositPayload,
         )
-        if (transferTxn?.digest) {
+        if (txn?.effects?.status.status === "failure") {
+            throw new Error(txn.effects.status.error)
+        }
+        if (txn?.digest) {
             await this.cetusZapSdk.FullClient.waitForTransaction({
-                digest: transferTxn?.digest,
+                digest: txn?.digest,
             })
             await this.cetusTxRateLimiterService.increaseTxCount()
         }

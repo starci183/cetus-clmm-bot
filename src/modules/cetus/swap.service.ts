@@ -66,7 +66,6 @@ export class CetusSwapService {
     }: SwapParams): Promise<SwapResult | undefined> {
         const maxCheck = 10
         let ignoreFirst = true
-
         for (let i = 0; i < maxCheck; i++) {
             try {
                 const result = await this.swapCore({ profilePair, amount, a2b, slippage })
@@ -74,14 +73,14 @@ export class CetusSwapService {
                 if (result.balanceEnough && result.routeFound && result.digest) {
                     if (ignoreFirst) {
                         ignoreFirst = false
-                        await sleep(500)
+                        await sleep(100)
                     } else {
                         return result
                     }
                 }
             } catch (error) {
                 this.logger.error(`Swap attempt #${i} failed`, error.message)
-                await sleep(500)
+                await sleep(100)
             }
         }
 
@@ -154,16 +153,18 @@ export class CetusSwapService {
                 txb,
             })
 
-            const signedTx = await this.suiClient.signAndExecuteTransaction({
+            const txn = await this.suiClient.signAndExecuteTransaction({
                 transaction: txb,
                 signer: this.cetusSignerService.getSigner(),
             })
-
-            if (signedTx?.digest) {
-                await this.suiClient.waitForTransaction({ digest: signedTx.digest })
+            if (txn.effects?.status.status === "failure") {
+                throw new Error(txn.effects.status.error)
+            }
+            if (txn?.digest) {
+                await this.suiClient.waitForTransaction({ digest: txn.digest })
                 await this.cetusTxRateLimiterService.increaseTxCount()
-                this.logger.log(`Transaction success: ${signedTx.digest}`)
-                return { balanceEnough: true, routeFound: true, digest: signedTx.digest }
+                this.logger.log(`Transaction success: ${txn.digest}`)
+                return { balanceEnough: true, routeFound: true, digest: txn.digest }
             } else {
                 return { balanceEnough: true, routeFound: true, error: "No digest returned" }
             }
