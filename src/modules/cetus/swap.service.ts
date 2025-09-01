@@ -16,7 +16,7 @@ import { SuiClient } from "@mysten/sui/client"
 import { BalanceManagerService } from "./balance-manager.service"
 import BN from "bn.js"
 import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
-
+import { sleep } from "@/modules/common"
 export interface SwapParams {
   profilePair: ProfilePairSchema;
   amount?: number;
@@ -60,11 +60,13 @@ export class CetusSwapService {
         for (let i = 0; i < maxCheck; i++) {
             try {
                 const success = await this.swapCore({ profilePair, amount, a2b, slippage })
+                this.logger.verbose(`Swap ${i} times, success: ${success}`)
                 if (success) {
                     return
                 }
             } catch (error) {
                 this.logger.verbose(error)
+                await sleep(500)
             }
         }
     }

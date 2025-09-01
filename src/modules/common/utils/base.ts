@@ -14,3 +14,7 @@ export const createObjectId = (id: string = v4()): Types.ObjectId => {
 export const roundNumber = (num: number, precision = 5) => {
     return Number(num.toFixed(precision))
 }
+
+export const sleep = (ms: number) => {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+}
