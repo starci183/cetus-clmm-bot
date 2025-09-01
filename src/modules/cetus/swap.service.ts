@@ -55,6 +55,19 @@ export class CetusSwapService {
         a2b,
         slippage = 0.001, // 0.1%
     }: SwapParams) {
+        const maxCheck = 10
+        // check up to 10 times if swap is successful
+        for (let i = 0; i < maxCheck; i++) {
+            await this.swapCore({ profilePair, amount, a2b, slippage })
+        }
+    }
+    
+    async swapCore({
+        profilePair,
+        amount,
+        a2b,
+        slippage = 0.001, // 0.1%
+    }: SwapParams) {
         const pair = profilePair.pair as PairSchema
         let rawAmount: BN
         const tokenA = pair.tokenA as TokenSchema
