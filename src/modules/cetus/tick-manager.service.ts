@@ -4,6 +4,7 @@ import { ProfilePairSchema } from "@/modules/databases"
 import { MemDbService } from "@/modules/databases"
 
 const TICK_DEVIATION_THRESHOLD = 1/10
+const TICK_ZAP_THREHOLD = 1/3
 
 @Injectable()
 export class TickManagerService {
@@ -39,11 +40,27 @@ export class TickManagerService {
         return priorityAOverB ? Math.abs(upperTick - currentTick) : Math.abs(lowerTick - currentTick)
     }
 
+    public tickDistanceBetweenNotPriorityBound(
+        pool: Pool,
+        priorityAOverB: boolean
+    ) {
+        const currentTick = this.currentTick(pool)
+        const [lowerTick, upperTick] = this.tickBounds(pool)
+        return priorityAOverB ? Math.abs(lowerTick - currentTick) : Math.abs(upperTick - currentTick)
+    }
+
     public computeAllowedTickDeviation(
         pool: Pool
     ) {
         const tickSpacing = this.tickSpacing(pool)
         return Math.min(Math.floor(tickSpacing * TICK_DEVIATION_THRESHOLD), 4)
+    }
+
+    public computeZapTickDeviation(
+        pool: Pool
+    ) {
+        const tickSpacing = this.tickSpacing(pool)
+        return Math.floor(tickSpacing * TICK_ZAP_THREHOLD)
     }
 
     public canAddLiquidity(
@@ -53,6 +70,17 @@ export class TickManagerService {
         const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
         const tickDistance = this.tickDistanceBetweenPriorityBound(pool, priorityAOverB)
         const tickMaxDeviation = this.computeAllowedTickDeviation(pool)
+        return tickDistance <= tickMaxDeviation
+    }
+
+    // only zap if current tick - 
+    public canZapAddLiquidity(
+        pool: Pool,
+        profilePair: ProfilePairSchema
+    ) {
+        const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
+        const tickDistance = this.tickDistanceBetweenNotPriorityBound(pool, priorityAOverB)
+        const tickMaxDeviation = this.computeZapTickDeviation(pool)
         return tickDistance <= tickMaxDeviation
     }
 
@@ -99,6 +127,15 @@ export class TickManagerService {
             return canAddLiquidity && ((Math.abs(position.tick_upper_index - pool.current_tick_index) > tickSpacing))
         }
     }     
+
+    public requireZapOrDirectAddLiquidity(
+        pool: Pool,
+        profilePair: ProfilePairSchema
+    ) {
+        const canAddLiquidity = this.canAddLiquidity(pool, profilePair)
+        const canZapAddLiquidity = this.canZapAddLiquidity(pool, profilePair)
+        return canAddLiquidity || canZapAddLiquidity
+    }
 }
 
 export interface PositionOutOfRangeResponse {

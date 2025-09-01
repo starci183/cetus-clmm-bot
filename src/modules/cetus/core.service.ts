@@ -9,6 +9,7 @@ import { CetusSwapService } from "./swap.service"
 import { RetryService } from "@/modules/mixin"
 import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
 import { CetusTWAPService } from "./twap.service"
+import { CetusZapService } from "./zap.service"
 
 @Injectable()
 export class CetusCoreService {
@@ -21,6 +22,7 @@ export class CetusCoreService {
         private readonly retryService: RetryService,
         private readonly cetusTxRateLimiterService: CetusTxRateLimiterService,
         private readonly cetusTWAPService: CetusTWAPService,
+        private readonly cetusZapService: CetusZapService,
     ) { }
 
     @OnEvent(CetusEvent.PoolsUpdated)
@@ -79,11 +81,21 @@ export class CetusCoreService {
             }
             /// No position -> try add liquidity
             if (!position) {
-                await this.retryService.retry({
-                    action: async () => {
-                        await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
-                    },
-                })
+                if (this.tickManagerService.requireZapOrDirectAddLiquidity(pool, profilePair)) {
+                    this.logger.verbose(`[${pair.displayId}] Require zap to add liquidity`)
+                    await this.retryService.retry({
+                        action: async () => {
+                            await this.cetusZapService.depositOneSideFixToken(pool, profilePair)
+                        },
+                    })
+                } else {
+                    this.logger.verbose(`[${pair.displayId}] Require direct to add liquidity`)
+                    await this.retryService.retry({
+                        action: async () => {
+                            await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
+                        },
+                    })
+                }
                 continue
             }
             /// Already has a position

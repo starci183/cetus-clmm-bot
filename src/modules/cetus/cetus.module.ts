@@ -3,7 +3,7 @@ import { PoolManagerService } from "./pool-manager.service"
 import { CetusSwapService } from "./swap.service"
 // import { PositionManagerService } from "./position-manager.service"
 // import { CetusSignerService } from "./cetus-signer.service"
-import { getCetusAggregatorProvider, getCetusProvider, getSuiClientProvider } from "./cetus.providers"
+import { getCetusAggregatorProvider, getCetusProvider, getCetusZapSdkProvider, getSuiClientProvider } from "./cetus.providers"
 import { ConfigurableModuleClass } from "./cetus.module-definition"
 import { CetusSignerService } from "./cetus-signer.service"
 // import { MixinService } from "./mixin.service"
@@ -16,6 +16,7 @@ import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
 // import { BalanceManagerService } from "./balance-manager.service"
 // import { CetusSwapService } from "./cetus-swap.service"
 import { CetusTWAPService } from "./twap.service"
+import { CetusZapService } from "./zap.service"
 
 @Module({
     providers: [
@@ -23,6 +24,7 @@ import { CetusTWAPService } from "./twap.service"
         getCetusProvider(),
         getCetusAggregatorProvider(),
         getSuiClientProvider(),
+        getCetusZapSdkProvider(),
         PoolManagerService,
         CetusSwapService,
         CetusSignerService,
@@ -32,6 +34,7 @@ import { CetusTWAPService } from "./twap.service"
         CetusCoreService,
         CetusTxRateLimiterService,
         CetusTWAPService,
+        CetusZapService,
         //MixinService,
         //CetusSwapService,
         //Allo  cationManagerService,
