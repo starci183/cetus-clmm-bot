@@ -57,12 +57,17 @@ export class CetusSwapService {
     }: SwapParams) {
         const maxCheck = 10
         // check up to 10 times if swap is successful
+        let ignoreFirst = true
         for (let i = 0; i < maxCheck; i++) {
             try {
-                const success = await this.swapCore({ profilePair, amount, a2b, slippage })
-                this.logger.verbose(`Swap ${i} times, success: ${success}`)
-                if (success) {
-                    return
+                const { balanceEnough } = await this.swapCore({ profilePair, amount, a2b, slippage })
+                this.logger.verbose(`Swap attempt #${i}`)
+                if (balanceEnough) {
+                    if (ignoreFirst) {
+                        ignoreFirst = false
+                    } else {
+                        return
+                    }
                 }
             } catch (error) {
                 this.logger.verbose(error)
@@ -76,7 +81,7 @@ export class CetusSwapService {
         amount,
         a2b,
         slippage = 0.001, // 0.1%
-    }: SwapParams): Promise<boolean> {
+    }: SwapParams): Promise<SwapResult> {
         const pair = profilePair.pair as PairSchema
         let rawAmount: BN
         const tokenA = pair.tokenA as TokenSchema
@@ -99,7 +104,9 @@ export class CetusSwapService {
             this.logger.warn(
                 `Not enough balance to swap ${rawAmount.toString()} ${fromToken.displayId}`,
             )
-            return false
+            return {
+                balanceEnough: false,
+            }
         }
         const tokenFrom = fromToken.address
         const tokenTarget = toToken.address
@@ -117,7 +124,9 @@ export class CetusSwapService {
             this.logger.error(
                 `No router data v3 found for ${tokenFrom} to ${tokenTarget}`,
             )
-            return false
+            return {
+                balanceEnough: false
+            }
         }
         const txb = new Transaction()
         txb.setSender(envConfig().sui.walletAddress)
@@ -137,6 +146,12 @@ export class CetusSwapService {
             await this.cetusTxRateLimiterService.increaseTxCount()
         }
         this.logger.log(`Transaction digest: ${signedTx.digest}`)
-        return true
+        return {
+            balanceEnough: true
+        }
     }
+}
+
+export interface SwapResult {
+    balanceEnough?: boolean;
 }
