@@ -93,7 +93,6 @@ export class CetusZapService implements OnModuleInit {
             tick_upper: tickUpper   ,
             slippage,
         })
-        console.log(depositPayload)
         const transferTxn = await this.cetusZapSdk.FullClient.sendTransaction(
             this.cetusSignerService.getSigner(),
             depositPayload,
