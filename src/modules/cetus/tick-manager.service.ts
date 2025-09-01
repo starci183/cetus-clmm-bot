@@ -120,10 +120,11 @@ export class TickManagerService {
     ) {
         const priorityAOverB = this.memdbService.priorityAOverB(profilePair)
         const tickSpacing = this.tickSpacing(pool)
+        const tickDeviation = this.computeZapTickDeviation(pool)
         if (priorityAOverB) {
-            return ((Math.abs(position.tick_lower_index - pool.current_tick_index) > Math.ceil(tickSpacing / 2)))
+            return ((Math.abs(position.tick_lower_index - pool.current_tick_index) >= (tickSpacing - tickDeviation)))
         } else {
-            return ((Math.abs(position.tick_upper_index - pool.current_tick_index) > Math.ceil(tickSpacing / 2)))
+            return ((Math.abs(position.tick_upper_index - pool.current_tick_index) >= (tickSpacing - tickDeviation)))
         }
     }     
 

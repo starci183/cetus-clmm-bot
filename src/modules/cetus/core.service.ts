@@ -165,13 +165,23 @@ export class CetusCoreService {
                     })
                 }
             })
-            
-            // 3️⃣ Add liquidity
-            await this.retryService.retry({
-                action: async () => {
-                    await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
-                }
-            })
+
+            if (this.tickManagerService.requireZapOrDirectAddLiquidity(pool, profilePair)) {
+                this.logger.verbose(`[${pair.displayId}] Require zap to add liquidity`)
+                await this.retryService.retry({
+                    action: async () => {
+                        await this.cetusZapService.depositOneSideFixToken(pool, profilePair)
+                    }
+                })
+            }
+            else {
+                this.logger.verbose(`[${pair.displayId}] Require direct to add liquidity`)
+                await this.retryService.retry({
+                    action: async () => {
+                        await this.cetusActionService.addLiquidityFixToken(pool, profilePair)
+                    }
+                })
+            }
         } catch (error) {
             this.logger.error(
                 `[${pair.displayId}] Error swapping: ${error.message}`,
