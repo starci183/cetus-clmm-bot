@@ -79,7 +79,7 @@ export class CetusZapService implements OnModuleInit {
             return false
         }
         // check balance, if worth < 100usui
-        if (maxAmount.lt(new BN(100).mul(new BN(10).pow(new BN(9))))) {
+        if (maxAmount.lt(new BN(300).mul(new BN(10).pow(new BN(9))))) {
             this.logger.warn(`[${pair.displayId}] Max amount is less than 100usui, skipping...`)
             return false
         }
