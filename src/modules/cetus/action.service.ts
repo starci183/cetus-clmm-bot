@@ -148,6 +148,11 @@ export class CetusActionService {
         const slippageTolerance = 0.005 // 0.5%
         const fixedAmountA = priorityAOverB
         //const currentSqrtPrice = new BN(pool.current_sqrt_price)
+        // check balance, if worth < 100usui
+        if (maxAmount.lt(new BN(100).mul(new BN(10).pow(new BN(9))))) {
+            this.logger.warn(`[${pair.displayId}] Max amount is less than 100usui, skipping...`)
+            return false
+        }
         const amounts = {
             coinA: new BN(priorityAOverB ? maxAmount : 0),
             coinB: new BN(priorityAOverB ? 0 : maxAmount),

@@ -9,6 +9,7 @@ import { CetusSignerService } from "./cetus-signer.service"
 import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
 import { envConfig } from "../env"
 import { CetusTWAPService } from "./twap.service"
+import BN from "bn.js"
 
 @Injectable()
 export class CetusZapService implements OnModuleInit {
@@ -75,6 +76,11 @@ export class CetusZapService implements OnModuleInit {
         )
         if (position) {
             this.logger.warn(`[${pair.displayId}] Position already exists, skipping...`)
+            return false
+        }
+        // check balance, if worth < 100usui
+        if (maxAmount.lt(new BN(100).mul(new BN(10).pow(new BN(9))))) {
+            this.logger.warn(`[${pair.displayId}] Max amount is less than 100usui, skipping...`)
             return false
         }
         const depositObj = await this.cetusZapSdk.Zap.preCalculateDepositAmount(
