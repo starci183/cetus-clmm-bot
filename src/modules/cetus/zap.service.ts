@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common"
-import { InjectCetusZapSdk } from "./cetus.decorators"
+import { InjectCetus, InjectCetusZapSdk } from "./cetus.decorators"
 import CetusZapSDK from "@cetusprotocol/zap-sdk"
-import { Pool } from "@cetusprotocol/cetus-sui-clmm-sdk"
+import CetusClmmSDK, { Pool } from "@cetusprotocol/cetus-sui-clmm-sdk"
 import { MemDbService, PairSchema, ProfilePairSchema, TokenSchema } from "../databases"
 import { TickManagerService } from "./tick-manager.service"
 import { BalanceManagerService } from "./balance-manager.service"
@@ -21,6 +21,7 @@ export class CetusZapService implements OnModuleInit {
         private readonly cetusSignerService: CetusSignerService,
         private readonly cetusTxRateLimiterService: CetusTxRateLimiterService,
         private readonly cetusTWAPService: CetusTWAPService,
+        @InjectCetus() private cetusClmmSdk: CetusClmmSDK,
     ) {}
 
     onModuleInit() {
@@ -65,6 +66,15 @@ export class CetusZapService implements OnModuleInit {
             )
         if (!isAvailable) {
             this.logger.error("No enough balance to zap, skipping...")
+            return false
+        }
+        // check position - strictly
+        const [position] = await this.cetusClmmSdk.Position.getPositionList(
+            envConfig().sui.walletAddress,
+            [pool.poolAddress], // use the pool address from the fetched pool,
+        )
+        if (position) {
+            this.logger.warn(`[${pair.displayId}] Position already exists, skipping...`)
             return false
         }
         const depositObj = await this.cetusZapSdk.Zap.preCalculateDepositAmount(

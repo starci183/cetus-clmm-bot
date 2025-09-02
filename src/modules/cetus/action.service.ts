@@ -23,6 +23,7 @@ import {
 import { Connection } from "mongoose"
 import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
 import { CetusTWAPService } from "./twap.service"
+import { envConfig } from "../env"
 
 @Injectable()
 export class CetusActionService {
@@ -113,6 +114,15 @@ export class CetusActionService {
         // check if can add liquidity
         if (!this.tickManagerService.canAddLiquidity(pool, profilePair)) {
             this.logger.warn("Cannot add liquidity at current tick, skipping...")
+            return false
+        }
+        // strictly - check position
+        const [position] = await this.cetusClmmSdk.Position.getPositionList(
+            envConfig().sui.walletAddress,
+            [pool.poolAddress], // use the pool address from the fetched pool,
+        )
+        if (position) {
+            this.logger.warn(`[${pair.displayId}] Position already exists, skipping...`)
             return false
         }
         const priorityAOverB = this.memdbService.priorityAOverB(profilePair)

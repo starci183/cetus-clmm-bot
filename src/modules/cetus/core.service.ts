@@ -107,7 +107,6 @@ export class CetusCoreService {
                         this.logger.verbose(`[${pair.displayId}] Currently on reverse trend, 
                             have to remove position...`)
                         await this.processTransactions(poolWithPosition)
-                        continue
                     }
                 }
                 continue
