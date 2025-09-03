@@ -102,6 +102,11 @@ export class CetusZapService implements OnModuleInit {
                 coin_decimal_b: tokenB.decimals,
             },
         )
+        const priorityAmount = priorityAOverB ? depositObj.amount_a : depositObj.amount_b
+        if (new BN(priorityAmount).lt(new BN(maxAmount).div(new BN(2)))) {
+            this.logger.warn(`[${pair.displayId}] Priority amount is less than 1/2 of max amount, skipping...`)
+            return false
+        }
         const depositPayload = await this.cetusZapSdk.Zap.buildDepositPayload({
             deposit_obj: depositObj,
             pool_id: pool.poolAddress,
