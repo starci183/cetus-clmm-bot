@@ -10,6 +10,7 @@ import { CetusTxRateLimiterService } from "./cetus-rate-limiter.service"
 import { envConfig } from "../env"
 import { CetusTWAPService } from "./twap.service"
 import BN from "bn.js"
+import { CetusSwapService } from "./swap.service"
 
 @Injectable()
 export class CetusZapService implements OnModuleInit {
@@ -22,6 +23,7 @@ export class CetusZapService implements OnModuleInit {
         private readonly cetusSignerService: CetusSignerService,
         private readonly cetusTxRateLimiterService: CetusTxRateLimiterService,
         private readonly cetusTWAPService: CetusTWAPService,
+        private readonly cetusSwapService: CetusSwapService,
         @InjectCetus() private cetusClmmSdk: CetusClmmSDK,
     ) {}
 
@@ -122,6 +124,13 @@ export class CetusZapService implements OnModuleInit {
             })
             await this.cetusTxRateLimiterService.increaseTxCount()
         }
+        // we may experience slippage, so we need 
+        // to check the balance of the reset token
+        // safe to swap
+        await this.cetusSwapService.swap({
+            profilePair,
+            a2b: !priorityAOverB,
+        })
         return true
     }
 }
